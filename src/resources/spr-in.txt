@@ -1,0 +1,31 @@
+// universe
+=universe label=universe beskrivelse
+
+// question scheme
+// concept scheme
+==FC1 Første concept==concept beskrivelse
+
+// question item
+// control construct 
+1 fc1 første spørgsmål
+// store quei id, questionmap hashmap<id, ddiid>
+
+2 fc2 andet spørgsmål
+3 fc1 tredje spørgsmål
+
+// ifthense, value, then id ref idref
+// sequence
+// universe
+// syntax: filter ifthenelse [==, >, <]code_value the goto controlconstuct_ft_id else goto controlconstuct_2nd_id 
+**ifthenelse <8 4 2 Vi vil gerne stille nogle flere spørgsmål om fugle.
+
+
+==Anden concept==concept beskrivelse
+4 ac2 første spørgsmål
+5 ac2 andet spørgsmål
+**ifthenelse <8 6 2 Hvor mange gange om dagen?
+6 ac3 tredje spørgsmål
+
+
+  
+  

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            defaultHandler="dk.dda.ddieditor.line.command.ImportLine"
+            id="dk.dda.ddieditor.line.command.ImportLine"
+            name="ImportLine">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            allPopups="false"
+            locationURI="menu:filemenu-importmenu?after=merge-ddi">
+         <command
+               commandId="dk.dda.ddieditor.line.command.ImportLine"
+               label="Questions"
+               style="push">
+         </command>
+      </menuContribution>
+   </extension>
+
+</plugin>
