@@ -68,7 +68,7 @@ public class LineWizard extends Wizard {
 			Wiki2Ddi3Scanner wiki2Ddi3Scanner = new Wiki2Ddi3Scanner(ddi3Helper);
 			wiki2Ddi3Scanner.startScanning(WikiPage.wikiSyntax);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
+			// TODO Auto-generated catch block 
 			e.printStackTrace();
 		}
 
