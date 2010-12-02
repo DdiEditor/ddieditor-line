@@ -187,6 +187,7 @@ public class Ddi3Helper {
 		QuestionItemType result = null;
 		if (mque) {
 			result = createMultipleSubQuestion();
+			result = mquem.getDocument().getMultipleQuestionItem().addNewSubQuestions().addNewQuestionItem();
 		} else {
 			result = ques.getQuestionScheme().addNewQuestionItem();
 		}
