@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<project name="DdiEditor-Spss" default="resource" basedir=".">
+
+	<!-- properties -->
+	<property file="${basedir}/../lib-java/lib.properties" />
+	<property environment="env" />
+
+	<!-- directories -->
+	<property name="src.dir" value="${basedir}/src" />
+	<property name="src.resources.dir" value="${src.dir}/resources" />
+	<property name="testsrc.dir" value="${basedir}/testsrc" />
+
+	<property name="lib.dir.java.lib" value="${basedir}/../lib-java/" />
+	<property name="lib.dir.resources.lib" value="${basedir}/../resources/" />
+
+	<property name="build.classes.dir" value="${basedir}/bin" />
+	<property name="build.deploy.dir" value="${build.classes.dir}/deploy" />
+	<property name="build.dir.jdoc" value="${basedir}/build/javadoc" />
+
+	<!-- java arguments -->
+	<property name="java.heap.init" value="128" />
+	<property name="java.heap.max" value="1500" />
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<!-- clean										 -->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<target name="clean" description="Clean up">
+		<delete quiet="true" dir="${build.classes.dir}" />
+	</target>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<!-- resource                                    -->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<target name="resource" description="Clean up">
+		<mkdir dir="${build.classes.dir}" />
+		<mkdir dir="${build.classes.dir}/resources" />
+		<copy todir="${build.classes.dir}/resources" overwrite="yes">
+			<fileset dir="${src.resources.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="deploy-to-ddieditor-ui" description="Copies resources to ddieditor-ui/build dir">
+		<!-- resource files -->
+		<copy todir="../ddieditor-ui/bin/resources">
+			<fileset dir="${src.resources.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+	</target>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<!-- Generating javadoc         				 -->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+	<target name="javadoc" description="Compile javadoc">
+		<mkdir dir="${build.dir.jdoc}" />
+		<javadoc sourcepath="${src.dir}" destdir="${build.dir.jdoc}" classpathref="project.classpath" splitindex="true" verbose="true">
+			<fileset dir="${src.dir}">
+				<include name="org/opendatafoundation/data/**/*" />
+				<include name="org/ddialliance/ddieditor/spss/**/*" />
+			</fileset>
+		</javadoc>
+	</target>
+</project>
