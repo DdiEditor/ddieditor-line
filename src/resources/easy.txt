@@ -1,0 +1,23 @@
+ =universe label=universe beskrivels
+
+==questionscheme label==questionscheme beskrivelse
+* v1 Første spørgsmål
+** category
+** category
+'''''ifthenelse''''' >2 v5 v2 How many times a day?
+
+* '''Spørgsmålsbatteri tekst'''
+** v2 Andet spørgsmål
+*** category
+*** category
+** v3 Tredje spørgsmål
+*** category
+*** category
+** v4 Fjere spørgsmål
+*** category
+*** category
+* '''end'''
+
+* v5 Nyt spørgsmål
+** category
+** category
