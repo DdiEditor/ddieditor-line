@@ -47,7 +47,6 @@ public class FileScanner {
 	static private Log log = LogFactory.getLog(LogType.SYSTEM,
 			FileScanner.class);
 
-	
 	int lineNo = 0;
 
 	XmlOptions xmlOptions = new XmlOptions();
@@ -55,7 +54,7 @@ public class FileScanner {
 	/**
 	 * Constructor
 	 */
-	public FileScanner() {	
+	public FileScanner() {
 		xmlOptions.setSaveAggressiveNamespaces();
 		xmlOptions.setSavePrettyPrint();
 		xmlOptions.setSaveOuter();
@@ -65,14 +64,9 @@ public class FileScanner {
 	 * Scan file
 	 * 
 	 * @param file
-	 * @param result
-	 * @param charcterStart
-	 * @param contains
-	 * @param lineEnd
 	 * @throws Exception
 	 */
-	public void startScanning(File file, File result, String charcterStart,
-			String contains, String lineEnd) throws Exception {
+	public void startScanning(File file) throws Exception {
 		intDdi3();
 
 		Scanner scanner = null;
@@ -82,17 +76,16 @@ public class FileScanner {
 		while (scanner.hasNextLine()) {
 			++lineNo;
 			current = scanner.nextLine();
-			processLine(current, charcterStart, contains, lineEnd);
+			processLine(current);
 		}
 		scanner.close();
-		
+
 		// TODO update refs
 	}
 
 	Pattern pattern = Pattern.compile("[1-9]");
 
-	public void processLine(String line, String charcterStart, String contains,
-			String endLine) throws Exception {
+	public void processLine(String line) throws Exception {
 		if (log.isDebugEnabled()) {
 			log.debug(lineNo + " - " + line);
 		}
@@ -235,8 +228,8 @@ public class FileScanner {
 		}
 
 		// description
-		if (!(line.substring(1, index).equals(""))) {
-			setText(result.addNewHumanReadable(), line.substring(1, index) + 1);
+		if (!(line.substring(index+1).equals(""))) {
+			setText(result.addNewHumanReadable(), line.substring(index+1));
 		}
 		univ = result;
 	}
@@ -258,8 +251,8 @@ public class FileScanner {
 
 		// description
 		String description = null;
-		if (!(line.substring(2, index).equals(""))) {
-			description = line.substring(2, index);
+		if (!(line.substring(index+2).equals(""))) {
+			description = line.substring(index+2);
 			setText(result.getQuestionScheme().addNewDescription(), description);
 		}
 		ques = result;
