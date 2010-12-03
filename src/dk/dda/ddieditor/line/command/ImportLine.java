@@ -12,6 +12,7 @@ import org.ddialliance.ddi3.xml.xmlbeans.group.LogicalProductDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategorySchemeDocument;
 import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
+import org.ddialliance.ddieditor.ui.model.ElementType;
 import org.ddialliance.ddieditor.ui.perspective.InfoPerspective;
 import org.ddialliance.ddieditor.ui.view.InfoView;
 import org.ddialliance.ddieditor.ui.view.View;
@@ -172,13 +173,14 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			DataCollectionDocument dataColDoc = DataCollectionDocument.Factory
 					.newInstance();
 			dataColDoc.addNewDataCollection();
-			// to element type datacollection
-			ddi3Helper.addIdAndVersion(dataColDoc.getDataCollection(), null,
-					null);
+			// id
+			ddi3Helper.addIdAndVersion(dataColDoc.getDataCollection(),
+					ElementType.DATA_COLLECTION.getIdPrefix(), null);
+			// update light
 			dataColLight.setId(dataColDoc.getDataCollection().getId());
 			dataColLight
 					.setVersion(dataColDoc.getDataCollection().getVersion());
-
+			// create
 			DdiManager.getInstance().createElement(dataColDoc,
 					studyUnitLight.getId(), studyUnitLight.getVersion(),
 					"studyunit__StudyUnit");
