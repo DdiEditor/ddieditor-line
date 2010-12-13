@@ -1,0 +1,52 @@
+=DDI developers=Devs working with DDI
+
+==Travel questions==Questions related to travel method
+* v1 Did you travel alone ?
+** Yes
+** No
+'''''ifthenelse''''' ==0 v2 na A quick question related to your travel companions
+* v2 How many did you travel with ?
+
+* v3 How many working days per year do you travel?  
+
+* v4 Did you use an airline ?
+** Yes
+** No
+'''''ifthenelse''''' ==0 v5 v6 Pick the airline you used
+* v5 Name the airline: 
+** KLM
+** SAS
+** Lufthansa
+** Air America
+** Quantas
+** Other
+
+* v6 Pick your main mean of transport:
+** Car
+** Train
+** Bus
+
+* v7 How did you find you travel ?
+** Room for improvement
+** Nice
+** Good
+** The best
+
+* '''List the items you find interessting in Holland besides app's and xml?'''
+** v8 The queen
+*** Yes
+*** No
+
+** v9 The cities and cannals etc
+*** Yes
+*** No
+
+** v10 Dutch food and beverages
+*** Yes
+*** No
+* '''end'''
+
+* v11 Have you been in Holland before?
+** Yes
+** No
+
