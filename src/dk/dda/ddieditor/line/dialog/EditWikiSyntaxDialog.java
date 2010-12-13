@@ -107,7 +107,7 @@ public class EditWikiSyntaxDialog extends Dialog {
 				// location
 				FileDialog fd = new FileDialog(currentShell, SWT.SAVE);
 				fd.setText(Translator.trans("line.wikieditdialog.savebutton"));
-				String[] filterExt = { "*.txt", "*.*" };
+				String[] filterExt = { "*.txt" };
 				fd.setFilterExtensions(filterExt);
 				if (fileName!=null&&!fileName.equals("")) {
 					fd.setFileName(fileName);

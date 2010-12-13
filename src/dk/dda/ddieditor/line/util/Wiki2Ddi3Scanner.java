@@ -65,7 +65,7 @@ public class Wiki2Ddi3Scanner {
 		scanner.close();
 
 		// update refs
-		ddi3Helper.postResolveReferences();
+		ddi3Helper.postResolve();
 	}
 
 	Pattern noPattern = Pattern.compile("[1-9]");
@@ -125,7 +125,12 @@ public class Wiki2Ddi3Scanner {
 		return pattern.matcher(line).find();
 	}
 
-	// =universe label=universe beskrivelse
+	/**
+	 * Create universe
+	 * @param line
+	 *            of '=universe scheme label=universe scheme description'
+	 * @throws DDIFtpException
+	 */
 	private void createUniverse(String line) throws DDIFtpException {
 		String label = null;
 		int index = line.indexOf("=", 1);
@@ -173,14 +178,15 @@ public class Wiki2Ddi3Scanner {
 	private void createQuestion(String line) throws DDIFtpException {
 		String no = "";
 		int index = line.indexOf("v");
+		int end=-1;
 		if (index > -1) {
-			int end = line.indexOf(" ", index);
+			end = line.indexOf(" ", index);
 			if (end > -1) {
 				no = line.substring(index, end);
 			}
 		}
 
-		String text = line.substring(index + 1);
+		String text = line.substring(end + 1);
 		ddi3Helper.createQuestion(no, text);
 	}
 
@@ -203,6 +209,7 @@ public class Wiki2Ddi3Scanner {
 			// unset mque
 			if (text.equals(MQUE_END)) {
 				ddi3Helper.unsetMultipleQuestion();
+				return;
 			}
 			try {
 				ddi3Helper.createMultipleQuestion(text);
@@ -218,7 +225,7 @@ public class Wiki2Ddi3Scanner {
 	 * 
 	 * @param line
 	 *            of '** category'
-	 * @throws DDIFtpException 
+	 * @throws DDIFtpException
 	 */
 	private void createCategory(String line) throws DDIFtpException {
 		Matcher matcher = catePattern.matcher(line);
@@ -229,9 +236,13 @@ public class Wiki2Ddi3Scanner {
 	}
 
 	/**
-	 * 
+	 * Create if then else control construct<br>
+	 * When creating an if then else control construct the following ddi3 elements are being created:
+	 * <ul><li>A universe for the split population</li>
+	 * <li>A sequence containing the statement item and the then question reference </li>
+	 * <li>The sequence is added to the main sequence</li></ul>
 	 * @param line
-	 *            of '''''ifthenelse''''' >2 6 2 How many times a day?
+	 *            of '''''ifthenelse''''' >2 v6 v2 How many times a day?
 	 * @throws Exception
 	 */
 	private void createIfThenElse(String line) throws Exception {
@@ -252,6 +263,9 @@ public class Wiki2Ddi3Scanner {
 
 		// else
 		// params[3]
+		if (params[3].equals("na")) {
+			params[3] = null;
+		}
 
 		ddi3Helper.createIfThenElse(params[1], params[2], params[3], stament
 				.toString().trim());

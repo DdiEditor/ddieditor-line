@@ -7,12 +7,16 @@ import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptualComponent
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.UniverseSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.ControlConstructSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.DataCollectionDocument;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.MultipleQuestionItemDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.group.LogicalProductDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategorySchemeDocument;
+import org.ddialliance.ddi3.xml.xmlbeans.reusable.NoteDocument;
 import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
+import org.ddialliance.ddieditor.ui.dbxml.question.MultipleQuestionItemDao;
 import org.ddialliance.ddieditor.ui.model.ElementType;
+import org.ddialliance.ddieditor.ui.model.question.MultipleQuestionItem;
 import org.ddialliance.ddieditor.ui.perspective.InfoPerspective;
 import org.ddialliance.ddieditor.ui.view.InfoView;
 import org.ddialliance.ddieditor.ui.view.View;
@@ -200,7 +204,13 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 							"datacollection__DataCollection");
 		}
 
-		// TODO multiple question
+		// multiple question
+		for (MultipleQuestionItemDocument doc : ddi3Helper.getMqueList()) {
+			LightXmlObjectType quesLight = ddi3Helper.getMqueToQuesMap().get(
+					doc.getMultipleQuestionItem().getId());
+			DdiManager.getInstance().createElement(doc, quesLight.getId(),
+					quesLight.getVersion(), "QuestionScheme");
+		}
 
 		// control construct
 		for (ControlConstructSchemeDocument doc : ddi3Helper.getCocsList()) {
@@ -208,6 +218,14 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					.isEmpty()) {
 				continue;
 			}
+			DdiManager.getInstance()
+					.createElement(doc, dataColLight.getId(),
+							dataColLight.getVersion(),
+							"datacollection__DataCollection");
+		}
+
+		// notes
+		for (NoteDocument doc : ddi3Helper.getNotes()) {
 			DdiManager.getInstance()
 					.createElement(doc, dataColLight.getId(),
 							dataColLight.getVersion(),
