@@ -12,7 +12,7 @@ import org.ddialliance.ddiftp.util.log.LogType;
 
 public class Wiki2Ddi3Scanner {
 	static private Log log = LogFactory.getLog(LogType.SYSTEM,
-			Wiki2Ddi3ScannerTest.class);
+			Wiki2Ddi3Scanner.class);
 	Scanner scanner = null;
 	int lineNo = 0;
 
