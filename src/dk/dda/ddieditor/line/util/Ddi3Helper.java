@@ -46,6 +46,7 @@ import org.ddialliance.ddi3.xml.xmlbeans.reusable.StructuredStringType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.UserIDType;
 import org.ddialliance.ddieditor.logic.identification.IdentificationManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
+import org.ddialliance.ddieditor.model.namespace.ddi3.Ddi3NamespaceHelper;
 import org.ddialliance.ddieditor.ui.model.ElementType;
 import org.ddialliance.ddieditor.ui.model.ModelAccessor;
 import org.ddialliance.ddieditor.ui.model.ModelIdentifingType;
@@ -89,7 +90,7 @@ public class Ddi3Helper {
 	List<String> postCleanMainSeqItems = new ArrayList<String>();
 
 	XmlOptions xmlOptions = new XmlOptions();
-	String QUEI_VAR_USER_ID_TYPE = "dk.dda:queitopseudovarid";
+	
 	int LABEL_LENGTH = 35;
 	String labelPostFix = " ...";
 
@@ -222,7 +223,7 @@ public class Ddi3Helper {
 
 		// variable ref pseudoVariableId
 		UserIDType userId = result.addNewUserID();
-		userId.setType(QUEI_VAR_USER_ID_TYPE);
+		userId.setType(Ddi3NamespaceHelper.QUEI_VAR_USER_ID_TYPE);
 		userId.setStringValue(pseudoVariableId);
 
 		// univ ref as note
