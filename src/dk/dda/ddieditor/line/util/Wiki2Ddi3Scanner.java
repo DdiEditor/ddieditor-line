@@ -127,6 +127,7 @@ public class Wiki2Ddi3Scanner {
 
 	/**
 	 * Create universe
+	 * 
 	 * @param line
 	 *            of '=universe scheme label=universe scheme description'
 	 * @throws DDIFtpException
@@ -178,12 +179,18 @@ public class Wiki2Ddi3Scanner {
 	private void createQuestion(String line) throws DDIFtpException {
 		String no = "";
 		int index = line.indexOf("v");
-		int end=-1;
+		if (index == -1) {
+			index = line.indexOf("V");
+		}
+		int end = -1;
 		if (index > -1) {
 			end = line.indexOf(" ", index);
 			if (end > -1) {
 				no = line.substring(index, end);
 			}
+		}
+		if (!no.equals("")) {
+			no = "V" + no.substring(1);
 		}
 
 		String text = line.substring(end + 1);
@@ -237,10 +244,15 @@ public class Wiki2Ddi3Scanner {
 
 	/**
 	 * Create if then else control construct<br>
-	 * When creating an if then else control construct the following ddi3 elements are being created:
-	 * <ul><li>A universe for the split population</li>
-	 * <li>A sequence containing the statement item and the then question reference </li>
-	 * <li>The sequence is added to the main sequence</li></ul>
+	 * When creating an if then else control construct the following ddi3
+	 * elements are being created:
+	 * <ul>
+	 * <li>A universe for the split population</li>
+	 * <li>A sequence containing the statement item and the then question
+	 * reference</li>
+	 * <li>The sequence is added to the main sequence</li>
+	 * </ul>
+	 * 
 	 * @param line
 	 *            of '''''ifthenelse''''' >2 v6 v2 How many times a day?
 	 * @throws Exception
