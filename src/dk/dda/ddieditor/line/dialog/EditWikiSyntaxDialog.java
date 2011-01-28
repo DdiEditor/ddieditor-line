@@ -43,7 +43,7 @@ public class EditWikiSyntaxDialog extends Dialog {
 		final Shell currentShell = this.getShell();
 
 		// group
-		Editor editor = new Editor();
+		Editor editor = new Editor("");
 		Group group = editor.createGroup(parent,
 				Translator.trans("line.wikieditdialog.title"));
 		group.setLayoutData(new GridData(1000, 600));
