@@ -145,7 +145,7 @@ class ResourcePage extends WizardPage {
 
 	@Override
 	public void createControl(Composite parent) {
-		Editor editor = new Editor();
+		Editor editor = new Editor("");
 		Group group = editor.createGroup(parent,
 				Translator.trans("line.wizard.refpage.group"));
 
@@ -277,7 +277,7 @@ class WikiPage extends WizardPage {
 
 	@Override
 	public void createControl(Composite parent) {
-		Editor editor = new Editor();
+		Editor editor = new Editor("");
 		Group group = editor.createGroup(parent,
 				Translator.trans("line.dialog.group"));
 
@@ -383,7 +383,7 @@ class ParsePage extends WizardPage {
 
 	@Override
 	public void createControl(Composite parent) {
-		Editor editor = new Editor();
+		Editor editor = new Editor("");
 		Group group = editor.createGroup(parent,
 				Translator.trans("line.wizard.refpage.parse"));
 
