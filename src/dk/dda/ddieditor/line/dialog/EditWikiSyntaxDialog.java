@@ -43,7 +43,7 @@ public class EditWikiSyntaxDialog extends Dialog {
 		final Shell currentShell = this.getShell();
 
 		// group
-		Editor editor = new Editor("");
+		Editor editor = new Editor();
 		Group group = editor.createGroup(parent,
 				Translator.trans("line.wikieditdialog.title"));
 		group.setLayoutData(new GridData(1000, 600));
@@ -59,7 +59,7 @@ public class EditWikiSyntaxDialog extends Dialog {
 		final Browser browser = editor.createBrowser(group);
 		browser.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		final StyledText input = editor.createTextAreaInput(group,
-				Translator.trans("line.wikieditdialog.edit.inittext"));
+				Translator.trans("line.wikieditdialog.edit.inittext"), true);
 		input.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		input.addModifyListener(new ModifyListener() {
 			@Override
