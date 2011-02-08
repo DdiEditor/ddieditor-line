@@ -51,7 +51,6 @@ import org.ddialliance.ddieditor.ui.model.ElementType;
 import org.ddialliance.ddieditor.ui.model.ModelAccessor;
 import org.ddialliance.ddieditor.ui.model.ModelIdentifingType;
 import org.ddialliance.ddieditor.ui.model.instrument.IfThenElse;
-import org.ddialliance.ddieditor.ui.model.question.MultipleQuestionItem;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
 import org.ddialliance.ddiftp.util.log.Log;
@@ -72,39 +71,40 @@ public class Ddi3Helper {
 	Map<String, LightXmlObjectType> mqueToQuesMap = new HashMap<String, LightXmlObjectType>();
 
 	UniverseSchemeDocument unis;
-	UniverseType univ;
+	public UniverseType univ;
 	ConceptSchemeDocument cons;
-	ConceptType conc;
+	public ConceptType conc;
 	MultipleQuestionItemDocument mquem;
 	boolean mque = false;
 	QuestionConstructType mquecc;
-	QuestionSchemeDocument ques;
+	public QuestionSchemeDocument ques;
+	public List<String> quesIsNewList = new ArrayList<String>();
 	QuestionItemType quei;
 	CategorySchemeDocument cats;
-	ControlConstructSchemeDocument cocs;
-	SequenceType mainSeq;
+	public ControlConstructSchemeDocument cocs;
+	public boolean cocsIsNew = false;
+	public SequenceType mainSeq;
 
 	Map<String, LightXmlObjectType> pseudoVarIdToCcIdMap = new HashMap<String, LightXmlObjectType>();
 	List<XmlObject> postResolveItemRefs = new ArrayList<XmlObject>();
 	Map<String, LightXmlObjectType> pseudoVarIdToUnivIdMap = new HashMap<String, LightXmlObjectType>();
 	List<String> postCleanMainSeqItems = new ArrayList<String>();
 
-	XmlOptions xmlOptions = new XmlOptions();
-	
+	public XmlOptions xmlOptions = new XmlOptions();
+
 	int LABEL_LENGTH = 35;
 	String labelPostFix = " ...";
 
-	// TODO change to this later please !!!
+	// TODO change this later please !!!
 	String agency = ElementType.getAgency();
 
 	public Ddi3Helper() throws DDIFtpException {
 		xmlOptions.setSaveAggressiveNamespaces();
 		xmlOptions.setSavePrettyPrint();
 		xmlOptions.setSaveOuter();
-		intDdi3();
 	}
 
-	private void intDdi3() throws DDIFtpException {
+	public void initDdi3() throws DDIFtpException {
 		// universe
 		UniverseSchemeDocument unisDoc = UniverseSchemeDocument.Factory
 				.newInstance();
@@ -124,34 +124,46 @@ public class Ddi3Helper {
 		cons = consDoc;
 
 		// question scheme
-		QuestionSchemeDocument quesDoc = QuestionSchemeDocument.Factory
-				.newInstance();
-		quesDoc.addNewQuestionScheme();
-		addIdAndVersion(quesDoc.getQuestionScheme(),
-				ElementType.QUESTION_SCHEME.getIdPrefix(), null);
-		quesList.add(quesDoc);
-		ques = quesDoc;
+		if (ques == null) {
+			QuestionSchemeDocument quesDoc = QuestionSchemeDocument.Factory
+					.newInstance();
+			quesDoc.addNewQuestionScheme();
+			addIdAndVersion(quesDoc.getQuestionScheme(),
+					ElementType.QUESTION_SCHEME.getIdPrefix(), null);
+			quesList.add(quesDoc);
+			ques = quesDoc;
+			quesIsNewList.add(ques.getQuestionScheme().getId());
+		} else {
+			quesList.add(ques);
+		}
 
 		// category scheme
 		createCategoryScheme();
 
 		// control construct scheme
-		ControlConstructSchemeDocument cocsDoc = ControlConstructSchemeDocument.Factory
-				.newInstance();
-		cocsDoc.addNewControlConstructScheme();
-		addIdAndVersion(cocsDoc.getControlConstructScheme(),
-				ElementType.CONTROL_CONSTRUCT_SCHEME.getIdPrefix(), null);
-		cocsList.add(cocsDoc);
-		cocs = cocsDoc;
+		if (cocs == null) {
+			ControlConstructSchemeDocument cocsDoc = ControlConstructSchemeDocument.Factory
+					.newInstance();
+			cocsDoc.addNewControlConstructScheme();
+			addIdAndVersion(cocsDoc.getControlConstructScheme(),
+					ElementType.CONTROL_CONSTRUCT_SCHEME.getIdPrefix(), null);
+			cocsList.add(cocsDoc);
+			cocs = cocsDoc;
+			cocsIsNew = true;
+		} else {
+			cocsList.add(cocs);
+		}
 
 		// main seq
-		ControlConstructType cc = cocsDoc.getControlConstructScheme()
-				.addNewControlConstruct();
-		mainSeq = (SequenceType) cc.substitute(
-				SequenceDocument.type.getDocumentElementName(),
-				SequenceType.type);
-		setText(mainSeq.addNewLabel(), "Main sequence");
-		addIdAndVersion(mainSeq, ElementType.SEQUENCE.getIdPrefix(), null);
+		if (mainSeq == null) {
+			ControlConstructType cc = cocs.getControlConstructScheme()
+					.addNewControlConstruct();
+			mainSeq = (SequenceType) cc.substitute(
+					SequenceDocument.type.getDocumentElementName(),
+					SequenceType.type);
+			setText(mainSeq.addNewLabel(), "Main sequence");
+			addIdAndVersion(mainSeq, ElementType.SEQUENCE.getIdPrefix(), null);
+		}
 	}
 
 	// =universe label=universe beskrivelse
@@ -188,7 +200,7 @@ public class Ddi3Helper {
 
 		ques = result;
 		quesList.add(result);
-
+		quesIsNewList.add(result.getQuestionScheme().getId());
 		createConcept(label, description);
 	}
 
@@ -458,6 +470,20 @@ public class Ddi3Helper {
 						.getVersion()), ModelIdentifingType.Type_B.class);
 
 		// then reference
+		// TODO
+		// java.lang.NullPointerException
+		// at
+		// org.ddialliance.ddieditor.ui.model.ModelAccessor.setReference(ModelAccessor.java:19)
+		// at
+		// org.ddialliance.ddieditor.ui.model.instrument.IfThenElse.executeChange(IfThenElse.java:53)
+		// at
+		// org.ddialliance.ddieditor.ui.model.Model.applyChange(Model.java:101)
+		// at
+		// dk.dda.ddieditor.line.util.Ddi3Helper.createIfThenElse(Ddi3Helper.java:461)
+		// at
+		// dk.dda.ddieditor.line.util.Wiki2Ddi3Scanner.createIfThenElse(Wiki2Ddi3Scanner.java:282)
+		// at
+		// dk.dda.ddieditor.line.util.Wiki2Ddi3Scanner.processLine(Wiki2Ddi3Scanner.java:118)
 		model.applyChange(
 				createLightXmlObject(cocs.getControlConstructScheme().getId(),
 						cocs.getControlConstructScheme().getVersion(),
@@ -465,9 +491,9 @@ public class Ddi3Helper {
 				ModelIdentifingType.Type_C.class);
 
 		// else reference
-		if (elze!=null) {
+		if (elze != null) {
 			model.applyChange(createLightXmlObject(null, null, elze, null),
-					ModelIdentifingType.Type_D.class);	
+					ModelIdentifingType.Type_D.class);
 			postCleanMainSeqItems.add(elze);
 		}
 
@@ -531,10 +557,10 @@ public class Ddi3Helper {
 		noteList.add(doc);
 		return doc;
 	}
-	
+
 	public String getLihtXmlObjectAsText(LightXmlObjectType lightXmlObject) {
 		StringBuilder result = new StringBuilder();
-		result.append( "parentid__");
+		result.append("parentid__");
 		result.append(lightXmlObject.getParentId());
 		result.append("__parentVersion__");
 		result.append(lightXmlObject.getParentVersion());
@@ -542,7 +568,7 @@ public class Ddi3Helper {
 		result.append(lightXmlObject.getId());
 		result.append("__version__");
 		result.append(lightXmlObject.getVersion());
-		//String[] test = result.toString().split("__");
+		// String[] test = result.toString().split("__");
 		return result.toString();
 	}
 
@@ -643,8 +669,8 @@ public class Ddi3Helper {
 				// then
 				changeCcReference(xml.getThenConstructReference());
 				// elze
-				if (xml.getElseConstructReference()!=null) {
-					changeCcReference(xml.getElseConstructReference());					
+				if (xml.getElseConstructReference() != null) {
+					changeCcReference(xml.getElseConstructReference());
 				}
 
 			}
@@ -658,11 +684,17 @@ public class Ddi3Helper {
 		}
 	}
 
-	private void cleanSequenceForDublicateCcRefs() {
+	private void cleanSequenceForDublicateCcRefs() throws DDIFtpException {
 		String[] ccIds = new String[postCleanMainSeqItems.size()];
 		int count = 0;
 		for (String pseudoVarId : postCleanMainSeqItems) {
-			ccIds[count] = pseudoVarIdToCcIdMap.get(pseudoVarId).getId();
+			if (pseudoVarIdToCcIdMap.get(pseudoVarId) != null) {
+				ccIds[count] = pseudoVarIdToCcIdMap.get(pseudoVarId).getId();
+			} else {
+				throw new DDIFtpException(
+						"Variable label name is not containing in list: "
+								+ pseudoVarId, new Throwable());
+			}
 			count++;
 		}
 		for (Iterator<ReferenceType> iterator = mainSeq
@@ -717,7 +749,8 @@ public class Ddi3Helper {
 			for (QuestionSchemeDocument ques : quesList) {
 				for (QuestionItemType quei : ques.getQuestionScheme()
 						.getQuestionItemList()) {
-					if (quei.getUserIDArray(0).equals(entry.getKey())) {
+					if (!quei.getUserIDList().isEmpty()
+							&& quei.getUserIDArray(0).equals(entry.getKey())) {
 
 						// create new note
 						createQueiRefToUnivNote(

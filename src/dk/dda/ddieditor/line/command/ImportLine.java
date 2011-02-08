@@ -9,17 +9,20 @@ import org.ddialliance.ddi3.xml.xmlbeans.datacollection.ControlConstructSchemeDo
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.DataCollectionDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.MultipleQuestionItemDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionSchemeDocument;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.SequenceDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.group.LogicalProductDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategorySchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NoteDocument;
 import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
-import org.ddialliance.ddieditor.ui.dbxml.question.MultipleQuestionItemDao;
+import org.ddialliance.ddieditor.ui.editor.Editor;
+import org.ddialliance.ddieditor.ui.editor.category.CategoryEditor;
+import org.ddialliance.ddieditor.ui.editor.instrument.InstrumentEditor;
+import org.ddialliance.ddieditor.ui.editor.instrument.QuestionConstructEditor;
+import org.ddialliance.ddieditor.ui.editor.question.QuestionItemEditor;
+import org.ddialliance.ddieditor.ui.editor.universe.UniverseEditor;
 import org.ddialliance.ddieditor.ui.model.ElementType;
-import org.ddialliance.ddieditor.ui.model.question.MultipleQuestionItem;
-import org.ddialliance.ddieditor.ui.perspective.InfoPerspective;
-import org.ddialliance.ddieditor.ui.view.InfoView;
-import org.ddialliance.ddieditor.ui.view.View;
+import org.ddialliance.ddieditor.ui.view.ViewManager;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.log.Log;
 import org.ddialliance.ddiftp.util.log.LogFactory;
@@ -29,81 +32,49 @@ import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.runtime.preferences.ConfigurationScope;
 import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.WizardDialog;
-import org.eclipse.ui.IViewPart;
-import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.IWorkbenchWindow;
-import org.eclipse.ui.PartInitException;
+import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.WorkbenchException;
 import org.eclipse.ui.preferences.ScopedPreferenceStore;
 
 import dk.dda.ddieditor.line.util.Ddi3Helper;
 import dk.dda.ddieditor.line.wizard.LineWizard;
 
 public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
+	public static String ID = "dk.dda.ddieditor.line.command.ImportLine";
+
 	private Log log = LogFactory.getLog(LogType.SYSTEM, ImportLine.class);
 	ScopedPreferenceStore preferenceStore = new ScopedPreferenceStore(
 			new ConfigurationScope(), "ddieditor-ui");
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		LineWizard lineWizard = new LineWizard();
+		Ddi3Helper ddi3Helper = null;
+		try {
+			ddi3Helper = new Ddi3Helper();
+		} catch (Exception e) {
+			Editor.showError(e, ID);
+			return null;
+		}
+
+		// collect info aka wizard
+		LineWizard lineWizard = new LineWizard(ddi3Helper);
 		WizardDialog dialog = new WizardDialog(PlatformUI.getWorkbench()
 				.getDisplay().getActiveShell(), lineWizard);
-
 		int returnCode = dialog.open();
+
 		if (returnCode != Window.CANCEL) {
-			try {
-				createDdi3(lineWizard.getDdi3Helper());
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			refreshView();
+			// import questions
+			RefreshRunnable longJob = new RefreshRunnable(ddi3Helper);
+			BusyIndicator.showWhile(PlatformUI.getWorkbench().getDisplay(),
+					longJob);
+
+			// refresh views
+			String[] updateViewsIds = new String[] { UniverseEditor.ID,
+					QuestionItemEditor.ID, CategoryEditor.ID,
+					QuestionConstructEditor.ID, InstrumentEditor.ID };
+			ViewManager.getInstance().addViewsToRefresh(updateViewsIds);
 		}
 		return null;
-	}
-
-	private void refreshView() {
-		// update info view
-		// TODO refactor boiler plate code to refresh a
-		// view into a rcp command
-		final IWorkbenchWindow[] workbenchWindows = PlatformUI.getWorkbench()
-				.getWorkbenchWindows();
-
-		IWorkbenchPage workbenchPage = workbenchWindows[0].getActivePage();
-		PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					PlatformUI.getWorkbench().showPerspective(
-							InfoPerspective.ID, workbenchWindows[0]);
-				} catch (WorkbenchException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		});
-		IViewPart iViewPart = workbenchWindows[0].getActivePage().findView(
-				InfoView.ID);
-		if (iViewPart == null) {
-			try {
-				iViewPart = workbenchPage.showView(InfoView.ID);
-			} catch (PartInitException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-		// refresh in async to avoid swt thread
-		// violation
-		final View view = (View) iViewPart;
-		PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
-			@Override
-			public void run() {
-				view.refreshView();
-			}
-		});
 	}
 
 	/**
@@ -198,10 +169,18 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			if (doc.getQuestionScheme().getQuestionItemList().isEmpty()) {
 				continue;
 			}
-			DdiManager.getInstance()
-					.createElement(doc, dataColLight.getId(),
-							dataColLight.getVersion(),
-							"datacollection__DataCollection");
+			if (ddi3Helper.quesIsNewList.contains(doc.getQuestionScheme()
+					.getId())) {
+				// create
+				DdiManager.getInstance().createElement(doc,
+						dataColLight.getId(), dataColLight.getVersion(),
+						"datacollection__DataCollection");
+			} else {
+				// update
+				DdiManager.getInstance().updateElement(doc,
+						doc.getQuestionScheme().getId(),
+						doc.getQuestionScheme().getVersion());
+			}
 		}
 
 		// multiple question
@@ -213,16 +192,28 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 		}
 
 		// control construct
-		for (ControlConstructSchemeDocument doc : ddi3Helper.getCocsList()) {
-			if (doc.getControlConstructScheme().getControlConstructList()
-					.isEmpty()) {
-				continue;
-			}
-			DdiManager.getInstance()
-					.createElement(doc, dataColLight.getId(),
-							dataColLight.getVersion(),
+		if (!ddi3Helper.cocsIsNew) {
+			DdiManager.getInstance().updateElement(ddi3Helper.cocs,
+					ddi3Helper.cocs.getControlConstructScheme().getId(),
+					ddi3Helper.cocs.getControlConstructScheme().getVersion());
+		} else {
+			for (ControlConstructSchemeDocument doc : ddi3Helper.getCocsList()) {
+				if (doc.getControlConstructScheme().getControlConstructList()
+						.isEmpty()) {
+					continue;
+				} else {
+					DdiManager.getInstance().createElement(doc,
+							dataColLight.getId(), dataColLight.getVersion(),
 							"datacollection__DataCollection");
+				}
+			}
 		}
+
+		// sequence
+		SequenceDocument seqDoc = SequenceDocument.Factory
+				.parse(ddi3Helper.mainSeq.xmlText(ddi3Helper.xmlOptions));
+		DdiManager.getInstance().updateElement(seqDoc,
+				ddi3Helper.mainSeq.getId(), ddi3Helper.mainSeq.getVersion());
 
 		// notes
 		for (NoteDocument doc : ddi3Helper.getNotes()) {
@@ -268,6 +259,26 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					.createElement(doc, logProdLight.getId(),
 							logProdLight.getVersion(),
 							"logicalproduct__LogicalProduct");
+		}
+	}
+
+	/**
+	 * Runnable wrapping view refresh to enable RCP busy indicator
+	 */
+	class RefreshRunnable implements Runnable {
+		Ddi3Helper ddi3Helper;
+
+		RefreshRunnable(Ddi3Helper ddi3Helper) {
+			this.ddi3Helper = ddi3Helper;
+		}
+
+		@Override
+		public void run() {
+			try {
+				createDdi3(ddi3Helper);
+			} catch (Exception e) {
+				Editor.showError(e, ID);
+			}
 		}
 	}
 }

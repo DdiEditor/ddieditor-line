@@ -2,17 +2,14 @@ package dk.dda.ddieditor.line.wizard;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import org.ddialliance.ddi3.xml.xmlbeans.reusable.ReferenceType;
 import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
 import org.ddialliance.ddieditor.model.resource.DDIResourceType;
 import org.ddialliance.ddieditor.persistenceaccess.PersistenceManager;
 import org.ddialliance.ddieditor.ui.editor.Editor;
-import org.ddialliance.ddieditor.ui.editor.widgetutil.referenceselection.ReferenceSelectionCombo;
 import org.ddialliance.ddieditor.ui.view.Messages;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
@@ -43,36 +40,116 @@ import dk.dda.ddieditor.line.util.Wiki2Ddi3Scanner;
 public class LineWizard extends Wizard {
 	Ddi3Helper ddi3Helper;
 
-	public LineWizard() {
+	public LineWizard(Ddi3Helper ddi3Helper) {
 		super();
+		this.ddi3Helper = ddi3Helper;
 	}
 
 	public Ddi3Helper getDdi3Helper() {
 		return ddi3Helper;
 	}
 
+	public ResourcePage resourcePage = new ResourcePage();
+
 	@Override
 	public void addPages() {
-		addPage(new ResourcePage());
+		addPage(resourcePage);
 		addPage(new WikiPage());
 		addPage(new ParsePage());
 	}
 
-	@Override
 	public boolean performFinish() {
 		try {
-			// gather input
-			ddi3Helper = new Ddi3Helper();
+			// universe
+			if (resourcePage.uniRefSelectCombo.getResult() != null) {
+				ddi3Helper.univ = DdiManager
+						.getInstance()
+						.getUniverse(
+								resourcePage.uniRefSelectCombo.getResult()
+										.getId(),
+								resourcePage.uniRefSelectCombo.getResult()
+										.getVersion(),
+								resourcePage.uniRefSelectCombo.getResult()
+										.getParentId(),
+								resourcePage.uniRefSelectCombo.getResult()
+										.getParentVersion()).getUniverse();
+			}
+
+			// concept
+			if (resourcePage.conRefSelectCombo.getResult() != null) {
+				ddi3Helper.conc = DdiManager
+						.getInstance()
+						.getConcept(
+								resourcePage.conRefSelectCombo.getResult()
+										.getId(),
+								resourcePage.conRefSelectCombo.getResult()
+										.getVersion(),
+								resourcePage.conRefSelectCombo.getResult()
+										.getParentId(),
+								resourcePage.conRefSelectCombo.getResult()
+										.getParentVersion()).getConcept();
+			}
+
+			// question scheme
+			if (resourcePage.quesRefSelectCombo.getResult() != null) {
+				ddi3Helper.ques = DdiManager.getInstance().getQuestionScheme(
+						resourcePage.quesRefSelectCombo.getResult().getId(),
+						resourcePage.quesRefSelectCombo.getResult()
+								.getVersion(),
+						resourcePage.quesRefSelectCombo.getResult()
+								.getParentId(),
+						resourcePage.quesRefSelectCombo.getResult()
+								.getParentVersion());
+			}
+
+			// main sequence
+			if (resourcePage.seqRefSelectCombo.getResult() != null) {
+				ddi3Helper.mainSeq = DdiManager
+						.getInstance()
+						.getSequence(
+								resourcePage.seqRefSelectCombo.getResult()
+										.getId(),
+								resourcePage.seqRefSelectCombo.getResult()
+										.getVersion(),
+								resourcePage.seqRefSelectCombo.getResult()
+										.getParentId(),
+								resourcePage.seqRefSelectCombo.getResult()
+										.getParentVersion()).getSequence();
+
+				List<LightXmlObjectType> refCocs = DdiManager
+						.getInstance()
+						.getControlConstructSchemesLight(null, null, null, null)
+						.getLightXmlObjectList().getLightXmlObjectList();
+				for (LightXmlObjectType lightXmlObject : refCocs) {
+					if (lightXmlObject.getId().equals(
+							resourcePage.seqRefSelectCombo.getResult()
+									.getParentId())
+							&& lightXmlObject.getVersion().equals(
+									resourcePage.seqRefSelectCombo.getResult()
+											.getVersion())) {
+						ddi3Helper.cocs = DdiManager.getInstance()
+								.getControlConstructScheme(
+										lightXmlObject.getId(),
+										lightXmlObject.getVersion(),
+										lightXmlObject.getParentId(),
+										lightXmlObject.getParentVersion());
+						break;
+					}
+				}
+			}
+
+			ddi3Helper.initDdi3();
 
 			// parse file
 			Wiki2Ddi3Scanner wiki2Ddi3Scanner = new Wiki2Ddi3Scanner(ddi3Helper);
 			wiki2Ddi3Scanner.startScanning(WikiPage.wikiSyntax);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block 
-			e.printStackTrace();
+			Editor.showError(e, this.getClass().getName());
+			return false;
+		} finally {
+			unInitialize();
 		}
 
-		unInitialize();
 		return true;
 	}
 
@@ -125,120 +202,6 @@ public class LineWizard extends Wizard {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-	}
-}
-
-class ResourcePage extends WizardPage {
-	public static final String PAGE_NAME = "Ref";
-
-	ReferenceSelectionCombo uniRefSelectCombo = null;
-	ReferenceSelectionCombo conRefSelectCombo = null;
-	// conRefSelectCombo.getResult()
-	ReferenceSelectionCombo seqRefSelectCombo = null;
-	ReferenceSelectionCombo quesRefSelectCombo = null;
-	boolean createConceptScheme = false;
-	boolean createUniverseScheme = false;
-
-	public ResourcePage() {
-		super(PAGE_NAME, Translator.trans("line.wizard.refpage.title"), null);
-	}
-
-	@Override
-	public void createControl(Composite parent) {
-		Editor editor = new Editor();
-		Group group = editor.createGroup(parent,
-				Translator.trans("line.wizard.refpage.group"));
-
-		// universe ref
-		List<LightXmlObjectType> uniRefList = new ArrayList<LightXmlObjectType>();
-		try {
-			uniRefList = DdiManager.getInstance()
-					.getUniversesLight(null, null, null, null)
-					.getLightXmlObjectList().getLightXmlObjectList();
-		} catch (Exception e) {
-			// TODO
-		}
-		uniRefSelectCombo = editor.createRefSelection(group,
-				Messages.getString("VariableEditor.label.universeref"),
-				Messages.getString("VariableEditor.label.universeref"),
-				ReferenceType.Factory.newInstance(), uniRefList, false);
-
-		// create universe scheme
-		Button universeSchemeCreate = editor.createCheckBox(group, "",
-				Translator.trans("line.wizard.createunislabel"));
-		universeSchemeCreate.addSelectionListener(new SelectionListener() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				createUniverseScheme = ((Button) e.getSource()).getSelection();
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				// do nothing
-			}
-		});
-
-		// concept ref
-		List<LightXmlObjectType> conceptRefList = new ArrayList<LightXmlObjectType>();
-		try {
-			conceptRefList = DdiManager.getInstance()
-					.getConceptsLight(null, null, null, null)
-					.getLightXmlObjectList().getLightXmlObjectList();
-		} catch (Exception e) {
-			// TODO
-		}
-		conRefSelectCombo = editor.createRefSelection(group,
-				Messages.getString("VariableEditor.label.conceptref"),
-				Messages.getString("VariableEditor.label.conceptref"),
-				ReferenceType.Factory.newInstance(), conceptRefList, false);
-
-		// create concept scheme
-		Button conceptSchemeCreate = editor.createCheckBox(group, "",
-				Translator.trans("line.wizard.createconslabel"));
-		conceptSchemeCreate.addSelectionListener(new SelectionListener() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				createConceptScheme = ((Button) e.getSource()).getSelection();
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				// do nothing
-			}
-		});
-
-		// question scheme ref
-		List<LightXmlObjectType> questionSchemeRefList = new ArrayList<LightXmlObjectType>();
-		try {
-			questionSchemeRefList = DdiManager.getInstance()
-					.getQuestionSchemesLight(null, null, null, null)
-					.getLightXmlObjectList().getLightXmlObjectList();
-		} catch (Exception e) {
-			// TODO
-		}
-		quesRefSelectCombo = editor.createRefSelection(group,
-				Translator.trans("line.wizard.refpage.ques"),
-				Translator.trans("line.wizard.refpage.ques"),
-				ReferenceType.Factory.newInstance(), questionSchemeRefList,
-				false);
-
-		// main seq ref
-		List<LightXmlObjectType> seqRefList = new ArrayList<LightXmlObjectType>();
-		try {
-			seqRefList = DdiManager.getInstance()
-					.getSequencesLight(null, null, null, null)
-					.getLightXmlObjectList().getLightXmlObjectList();
-		} catch (Exception e) {
-			// TODO
-		}
-		seqRefSelectCombo = editor.createRefSelection(group,
-				Translator.trans("line.wizard.refpage.mainseqref"),
-				Translator.trans("line.wizard.refpage.mainseqref"),
-				ReferenceType.Factory.newInstance(), seqRefList, false);
-
-		// finalize
-		setControl(group);
-		setPageComplete(true);
 	}
 }
 

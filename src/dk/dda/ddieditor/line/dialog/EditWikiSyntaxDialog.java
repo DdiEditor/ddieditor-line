@@ -48,6 +48,7 @@ public class EditWikiSyntaxDialog extends Dialog {
 				Translator.trans("line.wikieditdialog.title"));
 		group.setLayoutData(new GridData(1000, 600));
 
+		// text input
 		Label markup = editor.createLabel(group,
 				Translator.trans("line.wikieditdialog.markup"));
 		markup.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false,
@@ -56,7 +57,10 @@ public class EditWikiSyntaxDialog extends Dialog {
 				Translator.trans("line.wikieditdialog.edit"));
 		edit.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false,
 				false, 1, 1));
+
+		// browser
 		final Browser browser = editor.createBrowser(group);
+		browser.setText("");
 		browser.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		final StyledText input = editor.createTextAreaInput(group,
 				Translator.trans("line.wikieditdialog.edit.inittext"), true);
@@ -109,9 +113,9 @@ public class EditWikiSyntaxDialog extends Dialog {
 				fd.setText(Translator.trans("line.wikieditdialog.savebutton"));
 				String[] filterExt = { "*.txt" };
 				fd.setFilterExtensions(filterExt);
-				if (fileName!=null&&!fileName.equals("")) {
+				if (fileName != null && !fileName.equals("")) {
 					fd.setFileName(fileName);
-				}				
+				}
 				fileName = fd.open();
 
 				// content

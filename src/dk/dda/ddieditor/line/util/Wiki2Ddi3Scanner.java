@@ -69,6 +69,7 @@ public class Wiki2Ddi3Scanner {
 	}
 
 	Pattern noPattern = Pattern.compile("[1-9]");
+	Pattern variNamePattern = Pattern.compile("v[1-9]*");
 	Pattern univPattern = Pattern.compile("[=]{1}.+[=]{1}");
 	Pattern quesPattern = Pattern.compile("[=]{2}.+[=]{2}");
 	Pattern queiPattern = Pattern.compile("\\*+ ?v");
@@ -271,12 +272,16 @@ public class Wiki2Ddi3Scanner {
 		// params[1];
 
 		// then
-		// params[2];
+		if (variNamePattern.matcher(params[2]).find()) {
+			params[2] = "V" + params[2].substring(1);
+		}
 
 		// else
 		// params[3]
 		if (params[3].equals("na")) {
 			params[3] = null;
+		} else if (variNamePattern.matcher(params[3]).find()) {
+			params[3] = "V" + params[3].substring(1);
 		}
 
 		ddi3Helper.createIfThenElse(params[1], params[2], params[3], stament
