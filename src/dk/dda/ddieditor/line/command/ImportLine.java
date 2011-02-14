@@ -73,6 +73,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					QuestionItemEditor.ID, CategoryEditor.ID,
 					QuestionConstructEditor.ID, InstrumentEditor.ID };
 			ViewManager.getInstance().addViewsToRefresh(updateViewsIds);
+			ViewManager.getInstance().refesh();
 		}
 		return null;
 	}
@@ -235,6 +236,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			LogicalProductDocument doc = LogicalProductDocument.Factory
 					.newInstance();
 			doc.addNewLogicalProduct();
+			doc.getLogicalProduct().addNewBaseLogicalProduct();
 
 			ddi3Helper.addIdAndVersion(doc.getLogicalProduct()
 					.getBaseLogicalProduct(), null, null);
