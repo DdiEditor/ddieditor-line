@@ -275,9 +275,6 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 		public void run() {
 			try {
 				createDdi3(ddi3Helper);
-				System.out.println("Start sleep");
-				Thread.currentThread().sleep(10000);// sleep for 10000 ms
-				System.out.println("Start sleep");
 			} catch (Exception e) {
 				Editor.showError(e, ID);
 			}
