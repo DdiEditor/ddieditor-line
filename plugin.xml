@@ -16,6 +16,7 @@
             locationURI="menu:filemenu-importmenu?after=merge-ddi">
          <command
                commandId="dk.dda.ddieditor.line.command.ImportLine"
+               icon="icons/question.png"
                label="Questions"
                style="push">
          </command>
