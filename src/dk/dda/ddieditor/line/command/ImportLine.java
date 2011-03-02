@@ -130,8 +130,14 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			if (doc.getConceptScheme().getConceptList().isEmpty()) {
 				continue;
 			}
-			DdiManager.getInstance().createElement(doc, compLight.getId(),
-					compLight.getVersion(), "ConceptualComponent");
+			DdiManager.getInstance()
+					.createElement(
+							doc,
+							compLight.getId(),
+							compLight.getVersion(),
+							"ConceptualComponent",
+							new String[] { "VersionRationale",
+									"VersionResponsibility" });
 		}
 
 		// data collection
@@ -156,7 +162,8 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			// create
 			DdiManager.getInstance().createElement(dataColDoc,
 					studyUnitLight.getId(), studyUnitLight.getVersion(),
-					"studyunit__StudyUnit");
+					"studyunit__StudyUnit",
+					new String[] { "ConceptualComponent" });
 		} else {
 			dataColLight.setId(datacollectionList.get(0).getId());
 			dataColLight.setVersion(datacollectionList.get(0).getVersion());
@@ -171,8 +178,15 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					.getId())) {
 				// create
 				DdiManager.getInstance().createElement(doc,
-						dataColLight.getId(), dataColLight.getVersion(),
-						"datacollection__DataCollection");
+						dataColLight.getId(),
+						dataColLight.getVersion(),
+						"datacollection__DataCollection",
+						// TODO hmmm this means work ...
+						new String[] { "Note", "Description",
+								"Label", "VersionRationale",
+								"VersionResponsibility" }
+				// , new String[] { "Note", "Methodology", "CollectionEvent" }
+						);
 			} else {
 				// update
 				DdiManager.getInstance().updateElement(doc,
@@ -185,8 +199,13 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 		for (MultipleQuestionItemDocument doc : ddi3Helper.getMqueList()) {
 			LightXmlObjectType quesLight = ddi3Helper.getMqueToQuesMap().get(
 					doc.getMultipleQuestionItem().getId());
-			DdiManager.getInstance().createElement(doc, quesLight.getId(),
-					quesLight.getVersion(), "QuestionScheme");
+			DdiManager.getInstance().createElement(
+					doc,
+					quesLight.getId(),
+					quesLight.getVersion(),
+					"QuestionScheme",
+					new String[] { "Description", "Label",
+							"VersionRationale", "VersionResponsibility" });
 		}
 
 		// control construct
@@ -200,9 +219,15 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 						.isEmpty()) {
 					continue;
 				} else {
-					DdiManager.getInstance().createElement(doc,
-							dataColLight.getId(), dataColLight.getVersion(),
-							"datacollection__DataCollection");
+					DdiManager.getInstance()
+							.createElement(
+									doc,
+									dataColLight.getId(),
+									dataColLight.getVersion(),
+									"datacollection__DataCollection",
+									new String[] { "QuestionScheme",
+											"VersionRationale",
+											"VersionResponsibility" });
 				}
 			}
 		}

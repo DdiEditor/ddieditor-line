@@ -372,6 +372,7 @@ class ParsePage extends WizardPage {
 
 		// finalize
 		setControl(group);
+		combo.setFocus();
 		setPageComplete(false);
 	}
 }
