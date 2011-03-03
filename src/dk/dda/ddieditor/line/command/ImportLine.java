@@ -16,11 +16,6 @@ import org.ddialliance.ddi3.xml.xmlbeans.reusable.NoteDocument;
 import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
 import org.ddialliance.ddieditor.ui.editor.Editor;
-import org.ddialliance.ddieditor.ui.editor.category.CategoryEditor;
-import org.ddialliance.ddieditor.ui.editor.instrument.InstrumentEditor;
-import org.ddialliance.ddieditor.ui.editor.instrument.QuestionConstructEditor;
-import org.ddialliance.ddieditor.ui.editor.question.QuestionItemEditor;
-import org.ddialliance.ddieditor.ui.editor.universe.UniverseEditor;
 import org.ddialliance.ddieditor.ui.model.ElementType;
 import org.ddialliance.ddieditor.ui.view.ViewManager;
 import org.ddialliance.ddiftp.util.DDIFtpException;
@@ -41,8 +36,8 @@ import dk.dda.ddieditor.line.wizard.LineWizard;
 
 public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 	public static String ID = "dk.dda.ddieditor.line.command.ImportLine";
-
 	private Log log = LogFactory.getLog(LogType.SYSTEM, ImportLine.class);
+	
 	ScopedPreferenceStore preferenceStore = new ScopedPreferenceStore(
 			new ConfigurationScope(), "ddieditor-ui");
 
@@ -137,7 +132,15 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 							compLight.getVersion(),
 							"ConceptualComponent",
 							new String[] { "VersionRationale",
-									"VersionResponsibility" });
+									"VersionResponsibility" },
+							new String[] { "ConceptScheme",
+									"ConceptSchemeReference", "UniverseScheme",
+									"UniverseSchemeReference",
+									"GeographicStructureScheme",
+									"GeographicStructureSchemeReference",
+									"GeographicLocationScheme",
+									"GeographicLocationSchemeReference" },
+							new String[] {});
 		}
 
 		// data collection
@@ -163,7 +166,8 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			DdiManager.getInstance().createElement(dataColDoc,
 					studyUnitLight.getId(), studyUnitLight.getVersion(),
 					"studyunit__StudyUnit",
-					new String[] { "ConceptualComponent" });
+					new String[] { "ConceptualComponent" }, new String[] {},
+					new String[] {});
 		} else {
 			dataColLight.setId(datacollectionList.get(0).getId());
 			dataColLight.setVersion(datacollectionList.get(0).getVersion());
@@ -177,16 +181,17 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			if (ddi3Helper.quesIsNewList.contains(doc.getQuestionScheme()
 					.getId())) {
 				// create
-				DdiManager.getInstance().createElement(doc,
+				DdiManager.getInstance().createElement(
+						doc,
 						dataColLight.getId(),
 						dataColLight.getVersion(),
 						"datacollection__DataCollection",
-						// TODO hmmm this means work ...
-						new String[] { "Note", "Description",
-								"Label", "VersionRationale",
-								"VersionResponsibility" }
-				// , new String[] { "Note", "Methodology", "CollectionEvent" }
-						);
+						new String[] { "Note", "Description", "Label",
+								"VersionRationale", "VersionResponsibility" },
+						new String[] { "CollectionEvent", "QuestionScheme",
+								"ControlConstructScheme",
+								"InterviewerInstructionScheme", "Instrument",
+								"ProcessingEvent" }, new String[] {});
 			} else {
 				// update
 				DdiManager.getInstance().updateElement(doc,
@@ -204,8 +209,10 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					quesLight.getId(),
 					quesLight.getVersion(),
 					"QuestionScheme",
-					new String[] { "Description", "Label",
-							"VersionRationale", "VersionResponsibility" });
+					new String[] { "Description", "Label", "VersionRationale",
+							"VersionResponsibility" },
+					new String[] { "QuestionItem", "MultipleQuestionItem" },
+					new String[] {});
 		}
 
 		// control construct
@@ -219,15 +226,20 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 						.isEmpty()) {
 					continue;
 				} else {
-					DdiManager.getInstance()
-							.createElement(
-									doc,
-									dataColLight.getId(),
-									dataColLight.getVersion(),
-									"datacollection__DataCollection",
-									new String[] { "QuestionScheme",
-											"VersionRationale",
-											"VersionResponsibility" });
+					DdiManager.getInstance().createElement(
+							doc,
+							dataColLight.getId(),
+							dataColLight.getVersion(),
+							"datacollection__DataCollection",
+							new String[] { "UserID", "VersionRationale",
+									"VersionResponsibility",
+									"DataCollectionModuleName", "Label",
+									"Description", "Coverage", "OtherMaterial",
+									"Note", "CollectionEvent" },
+							new String[] { "ControlConstructScheme",
+									"InterviewerInstructionScheme",
+									"Instrument", "ProcessingEvent" },
+							new String[] { "Methodology", "QuestionScheme" });
 				}
 			}
 		}
@@ -240,10 +252,18 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 
 		// notes
 		for (NoteDocument doc : ddi3Helper.getNotes()) {
-			DdiManager.getInstance()
-					.createElement(doc, dataColLight.getId(),
-							dataColLight.getVersion(),
-							"datacollection__DataCollection");
+			DdiManager.getInstance().createElement(
+					doc,
+					dataColLight.getId(),
+					dataColLight.getVersion(),
+					"datacollection__DataCollection",
+					new String[] { "VersionRationale", "VersionResponsibility",
+							"DataCollectionModuleName", "Label", "Description",
+							"Coverage", "OtherMaterial" },
+					new String[] { "Note", "Methodology", "CollectionEvent",
+							"QuestionScheme", "ControlConstructScheme",
+							"InterviewerInstructionScheme", "Instrument",
+							"ProcessingEvent" }, new String[] {});
 		}
 
 		// logical product
