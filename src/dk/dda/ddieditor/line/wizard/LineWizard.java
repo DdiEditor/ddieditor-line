@@ -58,10 +58,19 @@ public class LineWizard extends Wizard {
 		addPage(new ParsePage());
 	}
 
+	boolean checkRefSelection(LightXmlObjectType lightXmlObject) {
+		if (lightXmlObject.getId() == null || lightXmlObject.getId().equals("")) {
+			return false;
+		}
+		return true;
+	}
+
 	public boolean performFinish() {
 		try {
 			// universe
-			if (resourcePage.uniRefSelectCombo.getResult() != null) {
+			if (resourcePage.uniRefSelectCombo.getResult() != null
+					&& checkRefSelection(resourcePage.uniRefSelectCombo
+							.getResult())) {
 				ddi3Helper.univ = DdiManager
 						.getInstance()
 						.getUniverse(
@@ -76,7 +85,9 @@ public class LineWizard extends Wizard {
 			}
 
 			// concept
-			if (resourcePage.conRefSelectCombo.getResult() != null) {
+			if (resourcePage.conRefSelectCombo.getResult() != null
+					&& checkRefSelection(resourcePage.conRefSelectCombo
+							.getResult())) {
 				ddi3Helper.conc = DdiManager
 						.getInstance()
 						.getConcept(
@@ -91,7 +102,9 @@ public class LineWizard extends Wizard {
 			}
 
 			// question scheme
-			if (resourcePage.quesRefSelectCombo.getResult() != null) {
+			if (resourcePage.quesRefSelectCombo.getResult() != null
+					&& checkRefSelection(resourcePage.quesRefSelectCombo
+							.getResult())) {
 				ddi3Helper.ques = DdiManager.getInstance().getQuestionScheme(
 						resourcePage.quesRefSelectCombo.getResult().getId(),
 						resourcePage.quesRefSelectCombo.getResult()
@@ -103,7 +116,9 @@ public class LineWizard extends Wizard {
 			}
 
 			// main sequence
-			if (resourcePage.seqRefSelectCombo.getResult() != null) {
+			if (resourcePage.seqRefSelectCombo.getResult() != null
+					&& checkRefSelection(resourcePage.seqRefSelectCombo
+							.getResult())) {
 				ddi3Helper.mainSeq = DdiManager
 						.getInstance()
 						.getSequence(
