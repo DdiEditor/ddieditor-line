@@ -265,6 +265,7 @@ class WikiPage extends WizardPage {
 		Button pathBrowse = editor.createButton(group,
 				Translator.trans("line.filechooser.browse"));
 		final Browser browser = editor.createBrowser(group, "Question markup");
+		browser.setText("");
 		PathSelectionListener pathSelectionListener = new PathSelectionListener(
 				pathText, browser, this);
 		pathBrowse.addSelectionListener(pathSelectionListener);
