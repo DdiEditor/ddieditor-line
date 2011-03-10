@@ -69,10 +69,10 @@ public class Wiki2Ddi3Scanner {
 	}
 
 	Pattern noPattern = Pattern.compile("[1-9]");
-	Pattern variNamePattern = Pattern.compile("v[1-9]*");
+	Pattern variNamePattern = Pattern.compile("[vV][1-9]*");
 	Pattern univPattern = Pattern.compile("[=]{1}.+[=]{1}");
 	Pattern quesPattern = Pattern.compile("[=]{2}.+[=]{2}");
-	Pattern queiPattern = Pattern.compile("\\*+ ?v");
+	Pattern queiPattern = Pattern.compile("\\*+ ?[vV]");
 	Pattern mquePattern = Pattern.compile("\\* ?[']{3}.+[']{3}");
 	Pattern catePattern = Pattern.compile("\\*+ ?");
 	String ifThenElseMatch = "'''''ifthenelse'''''";
