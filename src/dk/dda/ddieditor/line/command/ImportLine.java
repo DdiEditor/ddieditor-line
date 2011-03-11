@@ -10,8 +10,8 @@ import org.ddialliance.ddi3.xml.xmlbeans.datacollection.DataCollectionDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.MultipleQuestionItemDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.SequenceDocument;
-import org.ddialliance.ddi3.xml.xmlbeans.group.LogicalProductDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategorySchemeDocument;
+import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.LogicalProductDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NoteDocument;
 import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
@@ -37,7 +37,7 @@ import dk.dda.ddieditor.line.wizard.LineWizard;
 public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 	public static String ID = "dk.dda.ddieditor.line.command.ImportLine";
 	private Log log = LogFactory.getLog(LogType.SYSTEM, ImportLine.class);
-	
+
 	ScopedPreferenceStore preferenceStore = new ScopedPreferenceStore(
 			new ConfigurationScope(), "ddieditor-ui");
 
@@ -278,14 +278,10 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			LogicalProductDocument doc = LogicalProductDocument.Factory
 					.newInstance();
 			doc.addNewLogicalProduct();
-			doc.getLogicalProduct().addNewBaseLogicalProduct();
 
-			ddi3Helper.addIdAndVersion(doc.getLogicalProduct()
-					.getBaseLogicalProduct(), null, null);
-			logProdLight.setId(doc.getLogicalProduct().getBaseLogicalProduct()
-					.getId());
-			logProdLight.setVersion(doc.getLogicalProduct()
-					.getBaseLogicalProduct().getVersion());
+			ddi3Helper.addIdAndVersion(doc.getLogicalProduct(), null, null);
+			logProdLight.setId(doc.getLogicalProduct().getId());
+			logProdLight.setVersion(doc.getLogicalProduct().getVersion());
 
 			DdiManager.getInstance().createElement(doc, studyUnitLight.getId(),
 					studyUnitLight.getVersion(), "studyunit__StudyUnit");

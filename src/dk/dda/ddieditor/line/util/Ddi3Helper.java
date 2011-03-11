@@ -13,6 +13,8 @@ import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptSchemeDocume
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptType;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.UniverseSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.UniverseType;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.ComputationItemDocument;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.ComputationItemType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.ControlConstructSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.ControlConstructType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.DynamicTextType;
@@ -45,11 +47,13 @@ import org.ddialliance.ddi3.xml.xmlbeans.reusable.ReferenceType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.StructuredStringType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.UserIDType;
 import org.ddialliance.ddieditor.logic.identification.IdentificationManager;
+import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
 import org.ddialliance.ddieditor.model.namespace.ddi3.Ddi3NamespaceHelper;
 import org.ddialliance.ddieditor.ui.model.ElementType;
 import org.ddialliance.ddieditor.ui.model.ModelAccessor;
 import org.ddialliance.ddieditor.ui.model.ModelIdentifingType;
+import org.ddialliance.ddieditor.ui.model.instrument.ComputationItem;
 import org.ddialliance.ddieditor.ui.model.instrument.IfThenElse;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
@@ -381,18 +385,12 @@ public class Ddi3Helper {
 		return cats;
 	}
 
-	public void createIfThenElse(String condition, String then, String elze,
-			String statementText) throws Exception {
-		// universe
-		UniverseType prevUniv = univ;
-		createUniverse(getLabelText(statementText), getLabelText(statementText));
-		pseudoVarIdToUnivIdMap.put(
-				then,
-				createLightXmlObject(unis.getUniverseScheme().getId(), unis
-						.getUniverseScheme().getVersion(), univ.getId(), univ
-						.getVersion()));
+	public void createStatementItem(String statementText) throws Exception {
+		createStatementItem(statementText, mainSeq);
+	}
 
-		// statement item
+	private void createStatementItem(String statementText, SequenceType seq)
+			throws Exception {
 		StatementItemType stai = (StatementItemType) cocs
 				.getControlConstructScheme()
 				.addNewControlConstruct()
@@ -415,6 +413,63 @@ public class Ddi3Helper {
 		lTextType.addNewText();
 		XmlBeansUtil.setTextOnMixedElement(lTextType.getText(), statementText);
 
+		// ref statement item
+		ModelAccessor.setReference(
+				seq.addNewControlConstructReference(),
+				createLightXmlObject(cocs.getControlConstructScheme().getId(),
+						cocs.getControlConstructScheme().getVersion(),
+						stai.getId(), stai.getVersion()));
+	}
+
+	public void createComputationItem(String condition, String variref,
+			String label) throws Exception {
+		// if then else
+		ComputationItemType comp = (ComputationItemType) cocs
+				.getControlConstructScheme()
+				.addNewControlConstruct()
+				.substitute(
+						ComputationItemDocument.type.getDocumentElementName(),
+						ComputationItemType.type);
+		addIdAndVersion(comp, ElementType.COMPUTATION_ITEM.getIdPrefix(), null);
+		setText(comp.addNewLabel(), label);
+		
+		// model
+		ComputationItem model = getComputationItemModel(comp);
+		// ProgrammingLanguageCodeType
+		condition = "value " + condition;
+		model.applyChange(condition, ProgrammingLanguageCodeType.class);
+		// ProgrammingLanguageCodeType/@programmingLanguage
+		model.applyChange(agency, ModelIdentifingType.Type_A.class);
+
+		// variable reference
+		model.applyChange(createLightXmlObject("", "", variref, ""),
+				ModelIdentifingType.Type_B.class);
+		postResolveItemRefs.add(model.getDocument()
+				.getComputationItem());
+		addControlConstructToMainSequence(model.getDocument()
+				.getComputationItem());
+	}
+
+	private ComputationItem getComputationItemModel(ComputationItemType comp)
+			throws Exception {
+		ComputationItem model = new ComputationItem(
+				ComputationItemDocument.Factory.parse(comp.xmlText(xmlOptions)),
+				null, null);
+		model.setCreate(true);
+		return model;
+	}
+
+	public void createIfThenElse(String condition, String then, String elze,
+			String statementText) throws Exception {
+		// universe
+		UniverseType prevUniv = univ;
+		createUniverse(getLabelText(statementText), getLabelText(statementText));
+		pseudoVarIdToUnivIdMap.put(
+				then,
+				createLightXmlObject(unis.getUniverseScheme().getId(), unis
+						.getUniverseScheme().getVersion(), univ.getId(), univ
+						.getVersion()));
+
 		// seq
 		SequenceType seq = (SequenceType) cocs
 				.getControlConstructScheme()
@@ -427,12 +482,9 @@ public class Ddi3Helper {
 				+ getLabelText(quei.getQuestionItemNameArray(0)
 						.getStringValue()));
 
-		// ref statement item
-		ModelAccessor.setReference(
-				seq.addNewControlConstructReference(),
-				createLightXmlObject(cocs.getControlConstructScheme().getId(),
-						cocs.getControlConstructScheme().getVersion(),
-						stai.getId(), stai.getVersion()));
+		// statement item
+		createStatementItem(statementText, seq);
+
 		// ref next question item
 		ModelAccessor.setReference(
 				seq.addNewControlConstructReference(),
@@ -644,7 +696,7 @@ public class Ddi3Helper {
 	 * 
 	 * @throws DDIFtpException
 	 */
-	public void postResolve() throws DDIFtpException {
+	public void postResolve() throws Exception {
 		postResolveReferences();
 		for (CategorySchemeDocument cats : catsList) {
 			postResolveCategorySchemeLabels(cats);
@@ -653,8 +705,9 @@ public class Ddi3Helper {
 		cleanSequenceForDublicateCcRefs();
 	}
 
-	// Links the control constructs to the real id of question constructs
-	private void postResolveReferences() throws DDIFtpException {
+	// 1 Links the control constructs to the real id of question constructs
+	// 2 Links the control constructs to the real id of variable
+	private void postResolveReferences() throws Exception {
 		for (XmlObject xmlobject : postResolveItemRefs) {
 			// sequence
 			if (xmlobject instanceof SequenceType) {
@@ -672,7 +725,29 @@ public class Ddi3Helper {
 				if (xml.getElseConstructReference() != null) {
 					changeCcReference(xml.getElseConstructReference());
 				}
+			}
+			// computation item
+			else if (xmlobject instanceof ComputationItemType) {
+				ComputationItemType xml = (ComputationItemType) xmlobject;
 
+				// lookup pseudo vari ref
+				boolean found = false;
+				String pseudoVariRef = xml.getAssignedVariableReference()
+						.getIDArray(0).getStringValue();
+				for (LightXmlObjectType vari : getVariablesLight()) {
+					if (pseudoVariRef.equals(vari.getId())) {
+						ComputationItem model = getComputationItemModel(xml);
+
+						// variable reference
+						model.applyChange(vari,
+								ModelIdentifingType.Type_B.class);
+						found = true;
+						break;
+					}
+				}
+				if (!found) {
+					// TODO hmmm, variable reference is still pseudo vari id
+				}
 			}
 			// debug guard
 			else {
@@ -680,8 +755,28 @@ public class Ddi3Helper {
 						"Post resolve reference, type not implemented: "
 								+ xmlobject.getClass().getName(),
 						new Throwable());
+
 			}
 		}
+	}
+
+	List<LightXmlObjectType> variList = null;
+
+	private List<LightXmlObjectType> getVariablesLight() throws DDIFtpException {
+		if (variList == null) {
+			try {
+				variList = DdiManager.getInstance()
+						.getVariablesLight(null, null, null, null)
+						.getLightXmlObjectList().getLightXmlObjectList();
+			} catch (Exception e) {
+				if (!(e instanceof DDIFtpException)) {
+					throw new DDIFtpException(e);
+				} else {
+					throw (DDIFtpException) e;
+				}
+			}
+		}
+		return variList;
 	}
 
 	private void cleanSequenceForDublicateCcRefs() throws DDIFtpException {

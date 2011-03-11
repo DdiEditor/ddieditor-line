@@ -75,6 +75,8 @@ public class Wiki2Ddi3Scanner {
 	Pattern queiPattern = Pattern.compile("\\*+ ?[vV]");
 	Pattern mquePattern = Pattern.compile("\\* ?[']{3}.+[']{3}");
 	Pattern catePattern = Pattern.compile("\\*+ ?");
+	String compMatch = "'''''comp'''''";
+	String stateMatch = "'''''state'''''";
 	String ifThenElseMatch = "'''''ifthenelse'''''";
 
 	public void processLine(String line) throws Exception {
@@ -119,6 +121,15 @@ public class Wiki2Ddi3Scanner {
 			createIfThenElse(line);
 			return;
 		}
+		if (line.indexOf(compMatch) > -1) {
+			createComputationItem(line);
+			return;
+		}
+		if (line.indexOf(stateMatch) > -1) {
+			createStatementItem(line);
+			return;
+		}		
+		
 		return;
 	}
 
@@ -262,10 +273,10 @@ public class Wiki2Ddi3Scanner {
 		String params[] = line.split(" ");
 
 		// statement
-		StringBuilder stament = new StringBuilder();
+		StringBuilder text = new StringBuilder();
 		for (int i = 4; i < params.length; i++) {
-			stament.append(params[i]);
-			stament.append(" ");
+			text.append(params[i]);
+			text.append(" ");
 		}
 
 		// condition
@@ -284,7 +295,29 @@ public class Wiki2Ddi3Scanner {
 			params[3] = "V" + params[3].substring(1);
 		}
 
-		ddi3Helper.createIfThenElse(params[1], params[2], params[3], stament
+		ddi3Helper.createIfThenElse(params[1], params[2], params[3], text
 				.toString().trim());
+	}
+
+	private void createStatementItem(String line) throws Exception {
+		int index = line.indexOf(stateMatch);
+		String result = line.substring(index+stateMatch.length());
+		ddi3Helper.createStatementItem(result.trim());
+	}
+
+	private void createComputationItem(String line) throws Exception {
+		String params[] = line.split(" ");
+		
+		// varref params[1]		
+		// code params[2]
+		// label params[3]
+		// statement
+		StringBuilder text = new StringBuilder();
+		for (int i = 3; i < params.length; i++) {
+			text.append(params[i]);
+			text.append(" ");
+		}
+		
+		ddi3Helper.createComputationItem(params[1], params[2], text.toString());
 	}
 }
