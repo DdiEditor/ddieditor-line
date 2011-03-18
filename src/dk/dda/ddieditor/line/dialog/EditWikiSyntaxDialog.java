@@ -30,11 +30,13 @@ import dk.dda.ddieditor.line.wizard.LineWizard;
 public class EditWikiSyntaxDialog extends Dialog {
 	public String fileName;
 	public String result = "";
+	public String wikiSyntax;
 
-	public EditWikiSyntaxDialog(Shell parentShell, String fileName) {
+	public EditWikiSyntaxDialog(Shell parentShell, String fileName,
+			String wikiSyntax) {
 		super(parentShell);
-		// setShellStyle(getShellStyle()|SWT.V_S CROLL|SWT.H_SCROLL);
 		this.fileName = fileName;
+		this.wikiSyntax = wikiSyntax;
 	}
 
 	@Override
@@ -72,8 +74,14 @@ public class EditWikiSyntaxDialog extends Dialog {
 			}
 		});
 
+		// wikiSyntax
+		if (wikiSyntax != null && !wikiSyntax.equals("")) {
+			input.setText(wikiSyntax);
+			LineWizard.displayWiki(input.getText(), browser);
+			result = input.getText();
+		}
 		// file
-		if (fileName != null && !fileName.equals("")) {
+		else if (fileName != null && !fileName.equals("")) {
 			String wikiSyntax = LineWizard.readFile(fileName);
 			input.setText(wikiSyntax);
 			LineWizard.displayWiki(input.getText(), browser);
