@@ -69,12 +69,14 @@ public class Wiki2Ddi3Scanner {
 	}
 
 	Pattern noPattern = Pattern.compile("[1-9]");
-	Pattern variNamePattern = Pattern.compile("[vV][1-9]*");
+	Pattern variNamePattern = Pattern.compile("[vV][1-9]+");
+	
 	Pattern univPattern = Pattern.compile("[=]{1}.+[=]{1}");
 	Pattern quesPattern = Pattern.compile("[=]{2}.+[=]{2}");
-	Pattern queiPattern = Pattern.compile("\\*+ ?[vV]");
+	Pattern queiPattern = Pattern.compile("\\*+ ?[vV][1-9]++");
 	Pattern mquePattern = Pattern.compile("\\* ?[']{3}.+[']{3}");
 	Pattern catePattern = Pattern.compile("\\*+ ?");
+	
 	String compMatch = "'''''comp'''''";
 	String stateMatch = "'''''state'''''";
 	String ifThenElseMatch = "'''''ifthenelse'''''";
@@ -190,22 +192,26 @@ public class Wiki2Ddi3Scanner {
 	 */
 	private void createQuestion(String line) throws DDIFtpException {
 		String no = "";
-		int index = line.indexOf("v");
-		if (index == -1) {
-			index = line.indexOf("V");
-		}
-		int end = -1;
-		if (index > -1) {
-			end = line.indexOf(" ", index);
-			if (end > -1) {
-				no = line.substring(index, end);
-			}
-		}
-		if (!no.equals("")) {
-			no = "V" + no.substring(1);
-		}
+		Matcher matcher = variNamePattern.matcher(line);
+		matcher.find();
+		
+		no = line.substring(matcher.start()+1, matcher.end());
+//		int index = line.indexOf("v");
+//		if (index == -1) {
+//			index = line.indexOf("V");
+//		}
+//		int end = -1;
+//		if (index > -1) {
+//			end = line.indexOf(" ", index);
+//			if (end > -1) {
+//				no = line.substring(index, end);
+//			}
+//		}
+//		if (!no.equals("")) {
+//			no = "V" + no.substring(1);
+//		}
 
-		String text = line.substring(end + 1);
+		String text = line.substring(matcher.end()).trim();
 		ddi3Helper.createQuestion(no, text);
 	}
 

@@ -489,7 +489,7 @@ public class Ddi3Helper {
 		ModelAccessor.setReference(
 				seq.addNewControlConstructReference(),
 				createLightXmlObject(cocs.getControlConstructScheme().getId(),
-						cocs.getControlConstructScheme().getVersion(), then,
+						cocs.getControlConstructScheme().getVersion(), then.substring(1),
 						null));
 		postResolveItemRefs.add(seq);
 
@@ -546,7 +546,7 @@ public class Ddi3Helper {
 		if (elze != null) {
 			model.applyChange(createLightXmlObject(null, null, elze, null),
 					ModelIdentifingType.Type_D.class);
-			postCleanMainSeqItems.add(elze);
+			postCleanMainSeqItems.add(elze.substring(1));
 		}
 
 		// label
@@ -561,7 +561,7 @@ public class Ddi3Helper {
 		postResolveItemRefs.add(ifthenelse);
 
 		// post clean seq for created quei cc
-		postCleanMainSeqItems.add(then);
+		postCleanMainSeqItems.add(then.substring(1));
 
 		// reset univ
 		univ = prevUniv;
