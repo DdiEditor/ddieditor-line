@@ -142,7 +142,7 @@ public class Ddi3Helper {
 		}
 
 		// category scheme
-		createCategoryScheme();
+//		createCategoryScheme(); create on category scheme per question item (if requestion)
 
 		// control construct scheme
 		if (cocs == null) {
@@ -237,12 +237,12 @@ public class Ddi3Helper {
 		XmlBeansUtil.addTranslationAttributes(name,
 				Translator.getLocaleLanguage(), false, true);
 
-		// variable ref pseudoVariableId
+		// variable reference pseudoVariableId
 		UserIDType userId = result.addNewUserID();
 		userId.setType(Ddi3NamespaceHelper.QUEI_VAR_USER_ID_TYPE);
 		userId.setStringValue(pseudoVariableId);
 
-		// univ ref as note
+		// universe reference as note
 		if (univ != null) {
 			createQueiRefToUnivNote(
 					createLightXmlObject(ques.getQuestionScheme().getId(), ques
@@ -264,7 +264,7 @@ public class Ddi3Helper {
 		lTextType.addNewText();
 		XmlBeansUtil.setTextOnMixedElement(lTextType.getText(), text);
 
-		// concept ref
+		// concept reference
 		if (cons != null && conc != null) {
 			setReference(result.addNewConceptReference(), cons
 					.getConceptScheme().getId(), cons.getConceptScheme()
@@ -278,7 +278,7 @@ public class Ddi3Helper {
 					.getVersion(), result.getId(), result.getVersion());
 			setText(qc.addNewLabel(), getLabelText(text));
 
-			// pseudo var id map
+			// pseudo variable id map
 			pseudoVarIdToCcIdMap.put(
 					pseudoVariableId,
 					createLightXmlObject(cocs.getControlConstructScheme()
@@ -371,6 +371,20 @@ public class Ddi3Helper {
 		addIdAndVersion(cat, ElementType.CATEGORY.getIdPrefix(), null);
 
 		setText(cat.addNewLabel(), text);
+		
+		//set pseudo variable id as UserID element
+//		UserIDType userId = null;
+//		if (quei != null) {
+//			for (UserIDType userIdTmp : quei.getUserIDList()) {
+//				if (userIdTmp.getType().equals(
+//						Ddi3NamespaceHelper.QUEI_VAR_USER_ID_TYPE)) {
+//					userId = userIdTmp;
+//					break;
+//				}
+//			}
+//			cats.getCategoryScheme().setUserIDArray(new UserIDType[] {userId});
+//		}
+
 	}
 
 	private CategorySchemeDocument createCategoryScheme()
@@ -382,6 +396,20 @@ public class Ddi3Helper {
 				ElementType.CATEGORY_SCHEME.getIdPrefix(), null);
 		catsList.add(catsDoc);
 		cats = catsDoc;
+		
+		//TODO set pseudo variable id as UserID element
+		UserIDType userId = null;
+		if (quei != null) {
+			for (UserIDType userIdTmp : quei.getUserIDList()) {
+				if (userIdTmp.getType().equals(
+						Ddi3NamespaceHelper.QUEI_VAR_USER_ID_TYPE)) {
+					userId = userIdTmp;
+					break;
+				}
+			}
+			cats.getCategoryScheme().setUserIDArray(new UserIDType[] {userId});
+		}
+		
 		return cats;
 	}
 
