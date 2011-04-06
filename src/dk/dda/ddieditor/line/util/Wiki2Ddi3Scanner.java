@@ -68,8 +68,8 @@ public class Wiki2Ddi3Scanner {
 		ddi3Helper.postResolve();
 	}
 
-	Pattern noPattern = Pattern.compile("[1-9]");
-	Pattern variNamePattern = Pattern.compile("[vV][1-9]+");
+//	Pattern noPattern = Pattern.compile("[1-9]");
+	Pattern variNamePattern = Pattern.compile("[vV][1-9]+[0-9]?");
 	
 	Pattern univPattern = Pattern.compile("[=]{1}.+[=]{1}");
 	Pattern quesPattern = Pattern.compile("[=]{2}.+[=]{2}");
