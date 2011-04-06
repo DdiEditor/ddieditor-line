@@ -68,7 +68,6 @@ public class Wiki2Ddi3Scanner {
 		ddi3Helper.postResolve();
 	}
 
-//	Pattern noPattern = Pattern.compile("[1-9]");
 	Pattern variNamePattern = Pattern.compile("[vV][1-9]+[0-9]?");
 	
 	Pattern univPattern = Pattern.compile("[=]{1}.+[=]{1}");
@@ -196,21 +195,6 @@ public class Wiki2Ddi3Scanner {
 		matcher.find();
 		
 		no = line.substring(matcher.start()+1, matcher.end());
-//		int index = line.indexOf("v");
-//		if (index == -1) {
-//			index = line.indexOf("V");
-//		}
-//		int end = -1;
-//		if (index > -1) {
-//			end = line.indexOf(" ", index);
-//			if (end > -1) {
-//				no = line.substring(index, end);
-//			}
-//		}
-//		if (!no.equals("")) {
-//			no = "V" + no.substring(1);
-//		}
-
 		String text = line.substring(matcher.end()).trim();
 		ddi3Helper.createQuestion(no, text);
 	}
