@@ -18,7 +18,10 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.jface.wizard.WizardPage;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.widgets.Button;
@@ -26,6 +29,7 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 import org.jamwiki.parser.ParserException;
@@ -184,14 +188,15 @@ public class LineWizard extends Wizard {
 		IWizardPage nextPage = super.getNextPage(page);
 		return nextPage;
 	}
-
+	
 	public static String readFile(String fileName) {
 		Scanner scanner = null;
 		try {
 			scanner = new Scanner(new File(fileName), "utf-8");
 		} catch (FileNotFoundException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
+			MessageDialog.openError(PlatformUI.getWorkbench().getDisplay()
+					.getActiveShell(), Messages.getString("ErrorTitle"),
+					e2.getMessage());
 		}
 		StringBuilder wikiSyntax = new StringBuilder();
 		while (scanner.hasNextLine()) {
@@ -261,13 +266,31 @@ class WikiPage extends WizardPage {
 
 		// line.file
 		editor.createLabel(group, Translator.trans("line.filechooser.title"));
-		final Text pathText = editor.createText(group, "", false);
-		Button pathBrowse = editor.createButton(group,
-				Translator.trans("line.filechooser.browse"));
 		final Browser browser = editor.createBrowser(group, "Question markup");
 		browser.setText("");
+		final Text pathText = editor.createText(group, "", false);
+		pathText.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyReleased(KeyEvent e) {
+				// on a CR - read and display file:
+				if (e.keyCode == SWT.CR) {
+					// read in file
+					WikiPage.wikiSyntax = LineWizard.readFile(pathText
+							.getText());
+
+					// parse in browser
+					LineWizard.displayWiki(WikiPage.wikiSyntax, browser);
+
+					// set page complete
+					setPageComplete(true);
+				}
+			}
+		});
+		Button pathBrowse = editor.createButton(group,
+				Translator.trans("line.filechooser.browse"));
 		PathSelectionListener pathSelectionListener = new PathSelectionListener(
 				pathText, browser, this);
+
 		pathBrowse.addSelectionListener(pathSelectionListener);
 
 		// edit wiki
