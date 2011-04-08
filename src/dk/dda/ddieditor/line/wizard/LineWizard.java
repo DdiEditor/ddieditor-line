@@ -266,9 +266,12 @@ class WikiPage extends WizardPage {
 
 		// line.file
 		editor.createLabel(group, Translator.trans("line.filechooser.title"));
+		final Text pathText = editor.createText(group, "", false);
+		Button pathBrowse = editor.createButton(group,
+				Translator.trans("line.filechooser.browse"));
 		final Browser browser = editor.createBrowser(group, "Question markup");
 		browser.setText("");
-		final Text pathText = editor.createText(group, "", false);
+		
 		pathText.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyReleased(KeyEvent e) {
@@ -277,20 +280,16 @@ class WikiPage extends WizardPage {
 					// read in file
 					WikiPage.wikiSyntax = LineWizard.readFile(pathText
 							.getText());
-
 					// parse in browser
 					LineWizard.displayWiki(WikiPage.wikiSyntax, browser);
-
 					// set page complete
 					setPageComplete(true);
 				}
 			}
 		});
-		Button pathBrowse = editor.createButton(group,
-				Translator.trans("line.filechooser.browse"));
+		
 		PathSelectionListener pathSelectionListener = new PathSelectionListener(
 				pathText, browser, this);
-
 		pathBrowse.addSelectionListener(pathSelectionListener);
 
 		// edit wiki
