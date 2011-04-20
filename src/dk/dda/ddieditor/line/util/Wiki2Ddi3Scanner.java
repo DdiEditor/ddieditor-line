@@ -194,7 +194,7 @@ public class Wiki2Ddi3Scanner {
 		Matcher matcher = variNamePattern.matcher(line);
 		matcher.find();
 		
-		no = line.substring(matcher.start()+1, matcher.end());
+		no = "V"+line.substring(matcher.start()+1, matcher.end());
 		String text = line.substring(matcher.end()).trim();
 		ddi3Helper.createQuestion(no, text);
 	}
