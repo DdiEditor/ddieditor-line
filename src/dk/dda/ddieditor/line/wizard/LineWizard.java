@@ -405,12 +405,18 @@ class ParsePage extends WizardPage {
 		}
 		editor.createLabel(group, Translator.trans("line.resource.select"));
 		Combo combo = editor.createCombo(group, options);
-		resourceSelectionLister = new ResourceSelectionLister(resources, this);
-		combo.addSelectionListener(resourceSelectionLister);
+		if (options.length == 1) {
+			combo.select(0);
+			setPageComplete(true);
+		} else {
+			resourceSelectionLister = new ResourceSelectionLister(resources,
+					this);
+			combo.addSelectionListener(resourceSelectionLister);
+			setPageComplete(false);
+		}
 
 		// finalize
 		setControl(group);
 		combo.setFocus();
-		setPageComplete(false);
 	}
 }
