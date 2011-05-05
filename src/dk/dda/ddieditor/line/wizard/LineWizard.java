@@ -20,10 +20,16 @@ import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.events.TraverseEvent;
+import org.eclipse.swt.events.TraverseListener;
+import org.eclipse.swt.events.VerifyEvent;
+import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
@@ -217,7 +223,7 @@ public class LineWizard extends Wizard {
 		try {
 			String html = parser.parseHTML(new ParserOutput(), wikiSyntax
 					+ "__FORCETOC__" + System.getProperty("line.separator"));
-			browser.setText(html);
+			//browser.setText(html);
 		} catch (ParserException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -257,6 +263,13 @@ class WikiPage extends WizardPage {
 	public WikiPage() {
 		super(PAGE_NAME, Translator.trans("line.wizard.refpage.title"), null);
 	}
+	
+	private void readAndDisplayFile(String filename, Browser browser) {
+		// read in file
+		WikiPage.wikiSyntax = LineWizard.readFile(filename);
+		// parse in browser
+		LineWizard.displayWiki(WikiPage.wikiSyntax, browser);		
+	}
 
 	@Override
 	public void createControl(Composite parent) {
@@ -270,20 +283,29 @@ class WikiPage extends WizardPage {
 		Button pathBrowse = editor.createButton(group,
 				Translator.trans("line.filechooser.browse"));
 		final Browser browser = editor.createBrowser(group, "Question markup");
-		browser.setText("");
+		//browser.setText("");
 		
 		pathText.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyReleased(KeyEvent e) {
 				// on a CR - read and display file:
 				if (e.keyCode == SWT.CR) {
-					// read in file
-					WikiPage.wikiSyntax = LineWizard.readFile(pathText
-							.getText());
-					// parse in browser
-					LineWizard.displayWiki(WikiPage.wikiSyntax, browser);
+					readAndDisplayFile(pathText.getText(), browser);
 					// set page complete
 					setPageComplete(true);
+				}
+			}
+		});
+		pathText.addTraverseListener(new TraverseListener() {
+			public void keyTraversed(TraverseEvent e) {
+				switch (e.detail) {
+				case SWT.TRAVERSE_TAB_NEXT:
+				case SWT.TRAVERSE_TAB_PREVIOUS: {
+					readAndDisplayFile(pathText.getText(), browser);
+					// set page complete
+					setPageComplete(true);
+					e.doit = true;
+				}
 				}
 			}
 		});
