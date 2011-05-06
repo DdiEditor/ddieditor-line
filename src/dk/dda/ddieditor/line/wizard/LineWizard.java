@@ -223,7 +223,9 @@ public class LineWizard extends Wizard {
 		try {
 			String html = parser.parseHTML(new ParserOutput(), wikiSyntax
 					+ "__FORCETOC__" + System.getProperty("line.separator"));
-			//browser.setText(html);
+			if (browser != null) {
+				browser.setText(html);
+			}
 		} catch (ParserException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -283,7 +285,9 @@ class WikiPage extends WizardPage {
 		Button pathBrowse = editor.createButton(group,
 				Translator.trans("line.filechooser.browse"));
 		final Browser browser = editor.createBrowser(group, "Question markup");
-		//browser.setText("");
+		if (browser != null) {
+			browser.setText("");
+		}
 		
 		pathText.addKeyListener(new KeyAdapter() {
 			@Override
