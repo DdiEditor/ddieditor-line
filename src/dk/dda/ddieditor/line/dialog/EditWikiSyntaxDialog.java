@@ -62,8 +62,11 @@ public class EditWikiSyntaxDialog extends Dialog {
 
 		// browser
 		final Browser browser = editor.createBrowser(group);
-		browser.setText("");
-		browser.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+		if (browser != null) {
+			browser.setText("");
+			browser.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true,
+					1, 1));
+		}
 		final StyledText input = editor.createTextAreaInput(group,
 				Translator.trans("line.wikieditdialog.edit.inittext"), true);
 		input.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
