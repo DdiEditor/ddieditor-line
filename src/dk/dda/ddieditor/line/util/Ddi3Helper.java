@@ -233,6 +233,9 @@ public class Ddi3Helper {
 				// get Code Scheme reference of matching variable
 				if (variFound && cusList.getType().equals(VARI_VAL_REP)) {
 					for (CustomType valueRep : cusList.getCustomList()) {
+						if (valueRep.getValue() == null) {
+							break;
+						}
 						if (valueRep.getValue().equals(VARI_CODES_REF)) {
 							result = XmlBeansUtil
 									.getTextOnMixedElement(valueRep);
