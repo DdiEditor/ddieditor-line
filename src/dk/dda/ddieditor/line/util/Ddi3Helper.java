@@ -202,6 +202,12 @@ public class Ddi3Helper {
 		univ = result;
 	}
 
+	/**
+	 * Get Code Scheme of Variable.
+	 * @param pseudoVariRef - Speudo Variable reference e.g. 'v1'
+	 * @return Identification of Code Scheme
+	 * @throws DDIFtpException
+	 */
 	private String getVariableCodeScheme(String pseudoVariRef)
 			throws DDIFtpException {
 		String result = "";
@@ -461,6 +467,11 @@ public class Ddi3Helper {
 			}
 		}
 		String id = getVariableCodeScheme(userId.getStringValue());
+		if (id.equals("")) {
+			throw new DDIFtpException(
+					"Category specified for non-coded variable: "
+							+ userId.getStringValue());
+		}
 		// get code scheme
 		LightXmlObjectListDocument list = null;
 		CodeScheme codeScheme = null;
