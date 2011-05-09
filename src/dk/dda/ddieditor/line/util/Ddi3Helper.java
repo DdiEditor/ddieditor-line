@@ -204,7 +204,7 @@ public class Ddi3Helper {
 
 	/**
 	 * Get Code Scheme of Variable.
-	 * @param pseudoVariRef - Speudo Variable reference e.g. 'v1'
+	 * @param pseudoVariRef - Pseudo Variable reference e.g. 'v1'
 	 * @return Identification of Code Scheme
 	 * @throws DDIFtpException
 	 */
