@@ -1,5 +1,6 @@
 package dk.dda.ddieditor.line.util;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -26,6 +27,8 @@ import org.ddialliance.ddi3.xml.xmlbeans.datacollection.LiteralTextDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.LiteralTextType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.MultipleQuestionItemDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.MultipleQuestionItemType;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.NumericDomainDocument;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.NumericDomainType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionConstructDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionConstructType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionItemType;
@@ -45,6 +48,7 @@ import org.ddialliance.ddi3.xml.xmlbeans.reusable.LabelType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NameType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NoteDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NoteType;
+import org.ddialliance.ddi3.xml.xmlbeans.reusable.NumericTypeCodeType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.ProgrammingLanguageCodeType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.ReferenceType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.RepresentationType;
@@ -104,6 +108,7 @@ public class Ddi3Helper {
 	public boolean cocsIsNew = false;
 	public SequenceType mainSeq;
 	CodeSchemeDao codeSchemedao;
+	private List<LightXmlObjectType> vars = null;
 
 	Map<String, LightXmlObjectType> pseudoVarIdToCcIdMap = new HashMap<String, LightXmlObjectType>();
 	List<XmlObject> postResolveItemRefs = new ArrayList<XmlObject>();
@@ -203,28 +208,32 @@ public class Ddi3Helper {
 	}
 
 	/**
-	 * Get Code Scheme of Variable.
-	 * @param pseudoVariRef - Pseudo Variable reference e.g. 'v1'
-	 * @return Identification of Code Scheme
+	 * Get Value Representation of Variable.
+	 * 
+	 * @param pseudoVariRef
+	 *            - Pseudo Variable reference e.g. 'v1'
+	 * @return Custom Type e.g. Numeric or Code Scheme reference.
 	 * @throws DDIFtpException
 	 */
-	private String getVariableCodeScheme(String pseudoVariRef)
+	private CustomType getValueRepresentation(String pseudoVariRef)
 			throws DDIFtpException {
-		String result = "";
-		List<LightXmlObjectType> variableList = new ArrayList<LightXmlObjectType>();
-		try {
-			variableList = DdiManager.getInstance()
-					.getVariablesLightPlus(null, null, null, null)
-					.getLightXmlObjectList().getLightXmlObjectList();
-		} catch (Exception e) {
-			throw new DDIFtpException(e.getMessage());
+		CustomType result = null;
+		if (vars == null) {
+			vars = new ArrayList<LightXmlObjectType>();
+			try {
+				vars = DdiManager.getInstance()
+						.getVariablesLightPlus(null, null, null, null)
+						.getLightXmlObjectList().getLightXmlObjectList();
+			} catch (Exception e) {
+				throw new DDIFtpException(e.getMessage());
+			}
 		}
 
 		String id = "";
 		boolean variFound = false;
 		// for all light variable elements
-		for (LightXmlObjectType vari : variableList) {
-			// for all custom list elements
+		for (LightXmlObjectType vari : vars) {
+			// for all custom list elements of this variable
 			for (CustomListType cusList : vari.getCustomListList()) {
 				// get pseudo variable ID
 				if (cusList.getType().equals(VARI_NAME)) {
@@ -236,17 +245,10 @@ public class Ddi3Helper {
 						}
 					}
 				}
-				// get Code Scheme reference of matching variable
+				// get Value Representation of matching variable
 				if (variFound && cusList.getType().equals(VARI_VAL_REP)) {
 					for (CustomType valueRep : cusList.getCustomList()) {
-						if (valueRep.getValue() == null) {
-							break;
-						}
-						if (valueRep.getValue().equals(VARI_CODES_REF)) {
-							result = XmlBeansUtil
-									.getTextOnMixedElement(valueRep);
-							break;
-						}
+						result = valueRep;
 					}
 				}
 			}
@@ -342,14 +344,36 @@ public class Ddi3Helper {
 					.getVersion(), conc.getId(), conc.getVersion());
 		}
 
-		String codeSchemeReference = getVariableCodeScheme(pseudoVariableId);
-		if (codeSchemeReference.length() > 0) {
-			RepresentationType rt = result.addNewResponseDomain();
-			CodeDomainType cdt = (CodeDomainType) rt.substitute(
-					CodeDomainDocument.type.getDocumentElementName(),
-					CodeDomainType.type);
-			cdt.addNewCodeSchemeReference().addNewID()
-					.setStringValue(codeSchemeReference);
+		CustomType customType = getValueRepresentation(pseudoVariableId);
+		if (customType.getOption() != null
+				&& customType.getOption().equals("NumericTypeCodeType")) {
+			if (XmlBeansUtil.getTextOnMixedElement(customType)
+					.equals("Numeric")) {
+				// This is a Numeric Representation:
+				RepresentationType rt = result.addNewResponseDomain();
+				NumericDomainType ndt = (NumericDomainType) rt.substitute(
+						NumericDomainDocument.type.getDocumentElementName(),
+						NumericDomainType.type);
+				if (customType.getValue() != null
+						&& customType.getValue().equals("Double")) {
+					ndt.setType(NumericTypeCodeType.DOUBLE);
+					// TODO Get Decimal Position from Variable
+					ndt.setDecimalPositions(new BigInteger("0"));
+				}
+			}
+		} else if (customType.getValue() != null
+				&& customType.getValue().equals("CodeSchemeReference")) {
+			// This is a Code Scheme reference representation:
+			String codeSchemeReference = XmlBeansUtil
+					.getTextOnMixedElement(customType);
+			if (codeSchemeReference.length() > 0) {
+				RepresentationType rt = result.addNewResponseDomain();
+				CodeDomainType cdt = (CodeDomainType) rt.substitute(
+						CodeDomainDocument.type.getDocumentElementName(),
+						CodeDomainType.type);
+				cdt.addNewCodeSchemeReference().addNewID()
+						.setStringValue(codeSchemeReference);
+			}
 		}
 
 		// control construct
@@ -459,6 +483,11 @@ public class Ddi3Helper {
 		// assign category reference to code of code scheme
 		// get id of code scheme
 		UserIDType userId = null;
+		if (quei == null) {
+			throw new DDIFtpException(
+					"The Category is not specified in the context of a Question Item. \n"
+							+ "Category text is: " + text);
+		}
 		for (UserIDType userIdTmp : quei.getUserIDList()) {
 			if (userIdTmp.getType().equals(
 					Ddi3NamespaceHelper.QUEI_VAR_USER_ID_TYPE)) {
@@ -466,7 +495,13 @@ public class Ddi3Helper {
 				break;
 			}
 		}
-		String id = getVariableCodeScheme(userId.getStringValue());
+		CustomType customType = getValueRepresentation(userId.getStringValue());
+		if (customType == null || customType.getValue() == null) {
+			throw new DDIFtpException(
+					"Category specified for non-coded variable: "
+							+ userId.getStringValue());
+		}
+		String id = XmlBeansUtil.getTextOnMixedElement(customType);
 		if (id.equals("")) {
 			throw new DDIFtpException(
 					"Category specified for non-coded variable: "
