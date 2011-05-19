@@ -76,7 +76,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 	 * @param ddi3Helper
 	 * @throws Exception
 	 */
-	private void createDdi3(Ddi3Helper ddi3Helper) throws Exception {
+	protected void createDdi3(Ddi3Helper ddi3Helper) throws Exception {
 		// study unit
 		LightXmlObjectType studyUnitLight = null;
 		List<LightXmlObjectType> studyUnits = DdiManager.getInstance()
@@ -125,6 +125,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			if (doc.getConceptScheme().getConceptList().isEmpty()) {
 				continue;
 			}
+			// TODO check this insert position
 			DdiManager.getInstance()
 					.createElement(
 							doc,
