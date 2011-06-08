@@ -126,22 +126,30 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 				continue;
 			}
 			// TODO check this insert position
-			DdiManager.getInstance()
-					.createElement(
-							doc,
-							compLight.getId(),
-							compLight.getVersion(),
-							"ConceptualComponent",
-							new String[] { "VersionRationale",
-									"VersionResponsibility" },
-							new String[] { "ConceptScheme",
-									"ConceptSchemeReference", "UniverseScheme",
-									"UniverseSchemeReference",
-									"GeographicStructureScheme",
-									"GeographicStructureSchemeReference",
-									"GeographicLocationScheme",
-									"GeographicLocationSchemeReference" },
-							new String[] {});
+			DdiManager.getInstance().createElement(
+					doc,
+					compLight.getId(),
+					compLight.getVersion(),
+					"ConceptualComponent",
+					// parentSubElements - elements of parent
+					new String[] { "ConceptualComponentModuleName", "Label",
+							"Description", "Coverage", "OtherMaterial", "Note",
+							"ConceptScheme", "ConceptSchemeReference",
+							"UniverseScheme", "UniverseSchemeReference",
+							"GeographicStructureScheme",
+							"GeographicStructureSchemeReference",
+							"GeographicLocationScheme",
+							"GeographicLocationSchemeReference",
+							"VersionRationale", "VersionResponsibility" },
+					// stopElements - do not search below ...
+					new String[] { "ConceptScheme", "ConceptSchemeReference",
+							"UniverseScheme", "UniverseSchemeReference",
+							"GeographicStructureScheme",
+							"GeographicStructureSchemeReference",
+							"GeographicLocationScheme",
+							"GeographicLocationSchemeReference" },
+					// jumpElements - jump over elements
+					new String[] {});
 		}
 
 		// data collection
@@ -167,7 +175,11 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			DdiManager.getInstance().createElement(dataColDoc,
 					studyUnitLight.getId(), studyUnitLight.getVersion(),
 					"studyunit__StudyUnit",
-					new String[] { "ConceptualComponent" }, new String[] {},
+					// sub-elements
+					new String[] { "logicalproduct__LogicalProduct" },
+					// stop-elements
+					new String[] {},
+					// jump-elements
 					new String[] {});
 		} else {
 			dataColLight.setId(datacollectionList.get(0).getId());
@@ -182,17 +194,24 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			if (ddi3Helper.quesIsNewList.contains(doc.getQuestionScheme()
 					.getId())) {
 				// create
-				DdiManager.getInstance().createElement(
-						doc,
+				DdiManager.getInstance().createElement(doc,
 						dataColLight.getId(),
 						dataColLight.getVersion(),
 						"datacollection__DataCollection",
+						// parent sub-elements
 						new String[] { "Note", "Description", "Label",
-								"VersionRationale", "VersionResponsibility" },
+								"VersionRationale", "VersionResponsibility",
+								"CollectionEvent", "QuestionScheme",
+								"ControlConstructScheme",
+								"InterviewerInstructionScheme", "Instrument",
+								"ProcessingEvent" },
+						// stop elements
 						new String[] { "CollectionEvent", "QuestionScheme",
 								"ControlConstructScheme",
 								"InterviewerInstructionScheme", "Instrument",
-								"ProcessingEvent" }, new String[] {});
+								"ProcessingEvent" },
+						// jump elements - none
+						new String[] {});
 			} else {
 				// update
 				DdiManager.getInstance().updateElement(doc,
@@ -227,20 +246,22 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 						.isEmpty()) {
 					continue;
 				} else {
-					DdiManager.getInstance().createElement(
-							doc,
+					DdiManager.getInstance().createElement(doc,
 							dataColLight.getId(),
 							dataColLight.getVersion(),
 							"datacollection__DataCollection",
+							// parent sub-elements
 							new String[] { "UserID", "VersionRationale",
 									"VersionResponsibility",
 									"DataCollectionModuleName", "Label",
 									"Description", "Coverage", "OtherMaterial",
 									"Note", "CollectionEvent" },
-							new String[] { "ControlConstructScheme",
-									"InterviewerInstructionScheme",
+							// stop elements
+							new String[] { "InterviewerInstructionScheme",
 									"Instrument", "ProcessingEvent" },
-							new String[] { "Methodology", "QuestionScheme" });
+							// jump elements
+							new String[] { "Methodology", "QuestionScheme",
+									"ControlConstructScheme" });
 				}
 			}
 		}
@@ -296,10 +317,21 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			if (doc.getCategoryScheme().getCategoryList().isEmpty()) {
 				continue;
 			}
+
 			DdiManager.getInstance()
-					.createElement(doc, logProdLight.getId(),
+					.createElement(doc,
+							logProdLight.getId(),
 							logProdLight.getVersion(),
-							"logicalproduct__LogicalProduct");
+							"logicalproduct__LogicalProduct",
+							// parentSubElements - elements of parent
+							new String[] { "VersionRationale",
+									"VersionResponsibility" },
+							// stopElements - do not search below ...
+							new String[] { "CategoryScheme", "CodeScheme",
+									"CodeSchemeReference", "VariableScheme",
+									"VariableSchemeReference" },
+							// jumpElements - jump over elements
+							new String[] { "DataRelationship" });
 		}
 	}
 
