@@ -20,22 +20,17 @@ import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
-import org.eclipse.swt.events.FocusEvent;
-import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.events.TraverseEvent;
 import org.eclipse.swt.events.TraverseListener;
-import org.eclipse.swt.events.VerifyEvent;
-import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 import org.jamwiki.parser.ParserException;
@@ -194,7 +189,7 @@ public class LineWizard extends Wizard {
 		IWizardPage nextPage = super.getNextPage(page);
 		return nextPage;
 	}
-	
+
 	public static String readFile(String fileName) {
 		Scanner scanner = null;
 		try {
@@ -265,12 +260,12 @@ class WikiPage extends WizardPage {
 	public WikiPage() {
 		super(PAGE_NAME, Translator.trans("line.wizard.refpage.title"), null);
 	}
-	
+
 	private void readAndDisplayFile(String filename, Browser browser) {
 		// read in file
 		WikiPage.wikiSyntax = LineWizard.readFile(filename);
 		// parse in browser
-		LineWizard.displayWiki(WikiPage.wikiSyntax, browser);		
+		LineWizard.displayWiki(WikiPage.wikiSyntax, browser);
 	}
 
 	@Override
@@ -288,7 +283,7 @@ class WikiPage extends WizardPage {
 		if (browser != null) {
 			browser.setText("");
 		}
-		
+
 		pathText.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyReleased(KeyEvent e) {
@@ -313,7 +308,7 @@ class WikiPage extends WizardPage {
 				}
 			}
 		});
-		
+
 		PathSelectionListener pathSelectionListener = new PathSelectionListener(
 				pathText, browser, this);
 		pathBrowse.addSelectionListener(pathSelectionListener);
@@ -334,6 +329,7 @@ class WikiPage extends WizardPage {
 
 				if (dialog.result != null && !dialog.result.equals("")) {
 					wikiSyntax = dialog.result;
+					WikiPage.wikiSyntax = wikiSyntax;
 
 					// parse in browser
 					LineWizard.displayWiki(dialog.result, browser);
