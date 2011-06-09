@@ -173,12 +173,26 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					.setVersion(dataColDoc.getDataCollection().getVersion());
 			// create
 			DdiManager.getInstance().createElement(dataColDoc,
-					studyUnitLight.getId(), studyUnitLight.getVersion(),
+					studyUnitLight.getId(),
+					studyUnitLight.getVersion(),
 					"studyunit__StudyUnit",
 					// sub-elements
-					new String[] { "logicalproduct__LogicalProduct" },
+					new String[] { "UserID", "VersionResponsibility",
+							"VersionRationale", "Citation", "Abstract",
+							"UniverseReference", "SeriesStatement",
+							"FundingInformation", "Purpose", "Coverage",
+							"AnalysisUnit", "AnalysisUnitsCovered",
+							"KindOfData", "OtherMaterial", "Note", "Embargo",
+							"ConceptualComponent",
+							"ConceptualComponentReference" },
 					// stop-elements
-					new String[] {},
+					new String[] { "DataCollection", "DataCollectionReference",
+							"BaseLogicalProduct", "LogicalProductReference",
+							"PhysicalDataProduct",
+							"PhysicalDataProductReference", "PhysicalInstance",
+							"PhysicalInstanceReference", "Archive",
+							"ArchiveReference", "DDIProfile",
+							"DDIProfileReference" },
 					// jump-elements
 					new String[] {});
 		} else {
