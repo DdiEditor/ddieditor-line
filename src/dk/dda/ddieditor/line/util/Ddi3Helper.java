@@ -68,12 +68,14 @@ import org.ddialliance.ddieditor.ui.model.ModelIdentifingType;
 import org.ddialliance.ddieditor.ui.model.code.CodeScheme;
 import org.ddialliance.ddieditor.ui.model.instrument.ComputationItem;
 import org.ddialliance.ddieditor.ui.model.instrument.IfThenElse;
+import org.ddialliance.ddieditor.ui.util.DialogUtil;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
 import org.ddialliance.ddiftp.util.log.Log;
 import org.ddialliance.ddiftp.util.log.LogFactory;
 import org.ddialliance.ddiftp.util.log.LogType;
 import org.ddialliance.ddiftp.util.xml.XmlBeansUtil;
+import org.eclipse.ui.PlatformUI;
 
 public class Ddi3Helper {
 	static private Log log = LogFactory
@@ -345,34 +347,50 @@ public class Ddi3Helper {
 		}
 
 		CustomType customType = getValueRepresentation(pseudoVariableId);
-		if (customType.getOption() != null
-				&& customType.getOption().equals("NumericTypeCodeType")) {
-			if (XmlBeansUtil.getTextOnMixedElement(customType)
-					.equals("Numeric")) {
-				// This is a Numeric Representation:
-				RepresentationType rt = result.addNewResponseDomain();
-				NumericDomainType ndt = (NumericDomainType) rt.substitute(
-						NumericDomainDocument.type.getDocumentElementName(),
-						NumericDomainType.type);
-				if (customType.getValue() != null
-						&& customType.getValue().equals("Double")) {
-					ndt.setType(NumericTypeCodeType.DOUBLE);
-					// TODO Get Decimal Position from Variable
-					ndt.setDecimalPositions(new BigInteger("0"));
-				}
+		if (customType == null) {
+			DialogUtil
+					.errorDialog(PlatformUI.getWorkbench().getDisplay()
+							.getActiveShell(), "test", Translator
+							.trans("line.errortitle"), Translator.trans(
+							"line.error.valueRepresentationnotfound",
+							new Object[] { pseudoVariableId }), new Throwable());
+			boolean yesNo = DialogUtil.yesNoDialog(Translator	
+					.trans("line.continue"), Translator
+					.trans("line.valueRepresentationnotfound.continue"));
+			if (!yesNo) {
+				return;
 			}
-		} else if (customType.getValue() != null
-				&& customType.getValue().equals("CodeSchemeReference")) {
-			// This is a Code Scheme reference representation:
-			String codeSchemeReference = XmlBeansUtil
-					.getTextOnMixedElement(customType);
-			if (codeSchemeReference.length() > 0) {
-				RepresentationType rt = result.addNewResponseDomain();
-				CodeDomainType cdt = (CodeDomainType) rt.substitute(
-						CodeDomainDocument.type.getDocumentElementName(),
-						CodeDomainType.type);
-				cdt.addNewCodeSchemeReference().addNewID()
-						.setStringValue(codeSchemeReference);
+		} else {
+			if (customType.getOption() != null
+					&& customType.getOption().equals("NumericTypeCodeType")) {
+				if (XmlBeansUtil.getTextOnMixedElement(customType).equals(
+						"Numeric")) {
+					// This is a Numeric Representation:
+					RepresentationType rt = result.addNewResponseDomain();
+					NumericDomainType ndt = (NumericDomainType) rt
+							.substitute(NumericDomainDocument.type
+									.getDocumentElementName(),
+									NumericDomainType.type);
+					if (customType.getValue() != null
+							&& customType.getValue().equals("Double")) {
+						ndt.setType(NumericTypeCodeType.DOUBLE);
+						// TODO Get Decimal Position from Variable
+						ndt.setDecimalPositions(new BigInteger("0"));
+					}
+				}
+			} else if (customType.getValue() != null
+					&& customType.getValue().equals("CodeSchemeReference")) {
+				// This is a Code Scheme reference representation:
+				String codeSchemeReference = XmlBeansUtil
+						.getTextOnMixedElement(customType);
+				if (codeSchemeReference.length() > 0) {
+					RepresentationType rt = result.addNewResponseDomain();
+					CodeDomainType cdt = (CodeDomainType) rt.substitute(
+							CodeDomainDocument.type.getDocumentElementName(),
+							CodeDomainType.type);
+					cdt.addNewCodeSchemeReference().addNewID()
+							.setStringValue(codeSchemeReference);
+				}
 			}
 		}
 
@@ -637,8 +655,8 @@ public class Ddi3Helper {
 		return model;
 	}
 
-	public void createIfThenElse(String condition, String then, String elze,
-			String statementText) throws Exception {
+	public void createIfThenElse(String refVariable, String condition,
+			String then, String elze, String statementText) throws Exception {
 		// universe
 		UniverseType prevUniv = univ;
 		createUniverse(getLabelText(statementText), getLabelText(statementText));
@@ -694,6 +712,7 @@ public class Ddi3Helper {
 		model.applyChange(agency, ModelIdentifingType.Type_A.class);
 
 		// question reference
+		// refVariable
 		model.applyChange(
 				createLightXmlObject(ques.getQuestionScheme().getId(), ques
 						.getQuestionScheme().getVersion(), quei.getId(), quei
