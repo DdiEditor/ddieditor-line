@@ -321,7 +321,7 @@ class WikiPage extends WizardPage {
 			public void widgetSelected(SelectionEvent e) {
 				EditWikiSyntaxDialog dialog = new EditWikiSyntaxDialog(
 						PlatformUI.getWorkbench().getDisplay().getActiveShell(),
-						fileName, wikiSyntax);
+						fileName, WikiPage.wikiSyntax);
 				int returnCode = dialog.open();
 				if (returnCode == Window.CANCEL) {
 					return;
