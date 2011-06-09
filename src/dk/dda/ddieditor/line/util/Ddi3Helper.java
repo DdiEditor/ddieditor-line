@@ -44,6 +44,7 @@ import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CodeType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.AbstractIdentifiableType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.AbstractMaintainableType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.AbstractVersionableType;
+import org.ddialliance.ddi3.xml.xmlbeans.reusable.IDType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.LabelType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NameType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NoteDocument;
@@ -348,13 +349,12 @@ public class Ddi3Helper {
 
 		CustomType customType = getValueRepresentation(pseudoVariableId);
 		if (customType == null) {
-			DialogUtil
-					.errorDialog(PlatformUI.getWorkbench().getDisplay()
-							.getActiveShell(), "test", Translator
-							.trans("line.errortitle"), Translator.trans(
-							"line.error.valueRepresentationnotfound",
-							new Object[] { pseudoVariableId }), new Throwable());
-			boolean yesNo = DialogUtil.yesNoDialog(Translator	
+			DialogUtil.errorDialog(PlatformUI.getWorkbench().getDisplay()
+					.getActiveShell(), "test", Translator
+					.trans("line.errortitle"), Translator.trans(
+					"line.error.valueRepresentationnotfound",
+					new Object[] { pseudoVariableId }), new Throwable());
+			boolean yesNo = DialogUtil.yesNoDialog(Translator
 					.trans("line.continue"), Translator
 					.trans("line.valueRepresentationnotfound.continue"));
 			if (!yesNo) {
@@ -403,7 +403,7 @@ public class Ddi3Helper {
 
 			// pseudo variable id map
 			pseudoVarIdToCcIdMap.put(
-					pseudoVariableId,
+					pseudoVariableId.substring(1),
 					createLightXmlObject(cocs.getControlConstructScheme()
 							.getId(), cocs.getControlConstructScheme()
 							.getVersion(), qc.getId(), qc.getVersion()));
@@ -412,7 +412,7 @@ public class Ddi3Helper {
 		} else {
 			// pseudo var id map
 			pseudoVarIdToCcIdMap
-					.put(pseudoVariableId,
+					.put(pseudoVariableId.substring(1),
 							createLightXmlObject(cocs
 									.getControlConstructScheme().getId(), cocs
 									.getControlConstructScheme().getVersion(),
@@ -655,8 +655,8 @@ public class Ddi3Helper {
 		return model;
 	}
 
-	public void createIfThenElse(String refVariable, String condition,
-			String then, String elze, String statementText) throws Exception {
+	public void createIfThenElse(String queiRef, String condition, String then,
+			String elze, String statementText) throws Exception {
 		// universe
 		UniverseType prevUniv = univ;
 		createUniverse(getLabelText(statementText), getLabelText(statementText));
@@ -712,11 +712,8 @@ public class Ddi3Helper {
 		model.applyChange(agency, ModelIdentifingType.Type_A.class);
 
 		// question reference
-		// refVariable
-		model.applyChange(
-				createLightXmlObject(ques.getQuestionScheme().getId(), ques
-						.getQuestionScheme().getVersion(), quei.getId(), quei
-						.getVersion()), ModelIdentifingType.Type_B.class);
+		model.applyChange(createLightXmlObject(null, null, queiRef, null),
+				ModelIdentifingType.Type_B.class);
 
 		// then reference
 		// TODO
@@ -922,6 +919,12 @@ public class Ddi3Helper {
 				if (xml.getElseConstructReference() != null) {
 					changeCcReference(xml.getElseConstructReference());
 				}
+				// if source question ref
+				if (!xml.getIfCondition().getSourceQuestionReferenceList()
+						.isEmpty()) {
+					postResolveQueiReference(xml.getIfCondition()
+							.getSourceQuestionReferenceArray(0));
+				}
 			}
 			// computation item
 			else if (xmlobject instanceof ComputationItemType) {
@@ -984,8 +987,8 @@ public class Ddi3Helper {
 				ccIds[count] = pseudoVarIdToCcIdMap.get(pseudoVarId).getId();
 			} else {
 				throw new DDIFtpException(
-						"Variable label name is not containing in list: "
-								+ pseudoVarId, new Throwable());
+						Translator.trans("variable.label.notfound",
+								new Object[] { pseudoVarId }), new Throwable());
 			}
 			count++;
 		}
@@ -1051,6 +1054,33 @@ public class Ddi3Helper {
 										.getVersion(), quei.getId(),
 										quei.getVersion()), entry.getValue());
 					}
+				}
+			}
+		}
+	}
+
+	private void postResolveQueiReference(ReferenceType reference) {
+		IDType id = null;
+		if (reference.getIDList().isEmpty()) {
+			return;
+		} else {
+			id = reference.getIDList().get(0);
+		}
+
+		for (QuestionSchemeDocument ques : quesList) {
+			for (QuestionItemType quei : ques.getQuestionScheme()
+					.getQuestionItemList()) {
+
+				if (!quei.getUserIDList().isEmpty()
+						&& quei.getUserIDArray(0).getStringValue().substring(1)
+								.equals(id.getStringValue().substring(1))) {
+					ModelAccessor.setReference(
+							reference,
+							createLightXmlObject(ques.getQuestionScheme()
+									.getId(), ques.getQuestionScheme()
+									.getVersion(), quei.getId(), quei
+									.getVersion()));
+					break;
 				}
 			}
 		}

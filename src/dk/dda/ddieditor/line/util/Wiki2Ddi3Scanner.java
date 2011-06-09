@@ -69,13 +69,13 @@ public class Wiki2Ddi3Scanner {
 	}
 
 	Pattern variNamePattern = Pattern.compile("[vV][1-9]+[0-9]?");
-	
+
 	Pattern univPattern = Pattern.compile("[=]{1}.+[=]{1}");
 	Pattern quesPattern = Pattern.compile("[=]{2}.+[=]{2}");
 	Pattern queiPattern = Pattern.compile("\\*+ ?[vV][1-9]++");
 	Pattern mquePattern = Pattern.compile("\\* ?[']{3}.+[']{3}");
 	Pattern catePattern = Pattern.compile("\\*+ ?");
-	
+
 	String compMatch = "'''''comp'''''";
 	String stateMatch = "'''''state'''''";
 	String ifThenElseMatch = "'''''ifthenelse'''''";
@@ -129,8 +129,8 @@ public class Wiki2Ddi3Scanner {
 		if (line.indexOf(stateMatch) > -1) {
 			createStatementItem(line);
 			return;
-		}		
-		
+		}
+
 		return;
 	}
 
@@ -193,8 +193,8 @@ public class Wiki2Ddi3Scanner {
 		String no = "";
 		Matcher matcher = variNamePattern.matcher(line);
 		matcher.find();
-		
-		no = "V"+line.substring(matcher.start()+1, matcher.end());
+
+		no = "V" + line.substring(matcher.start() + 1, matcher.end());
 		String text = line.substring(matcher.end()).trim();
 		ddi3Helper.createQuestion(no, text);
 	}
@@ -264,41 +264,43 @@ public class Wiki2Ddi3Scanner {
 
 		// statement
 		StringBuilder text = new StringBuilder();
-		for (int i = 4; i < params.length; i++) {
+		for (int i = 5; i < params.length; i++) {
 			text.append(params[i]);
 			text.append(" ");
 		}
 
+		// ref vaiable
+
 		// condition
-		// params[1];
+		// params[2];
 
 		// then
 		if (variNamePattern.matcher(params[2]).find()) {
-			params[2] = "V" + params[2].substring(1);
-		}
-
-		// else
-		// params[3]
-		if (params[3].equals("na")) {
-			params[3] = null;
-		} else if (variNamePattern.matcher(params[3]).find()) {
 			params[3] = "V" + params[3].substring(1);
 		}
 
-		ddi3Helper.createIfThenElse(params[1], params[2], params[3], text
-				.toString().trim());
+		// else
+		// params[4]
+		if (params[4].equals("na")) {
+			params[4] = null;
+		} else if (variNamePattern.matcher(params[4]).find()) {
+			params[4] = "V" + params[4].substring(1);
+		}
+
+		ddi3Helper.createIfThenElse(params[1], params[2], params[3], params[4],
+				text.toString().trim());
 	}
 
 	private void createStatementItem(String line) throws Exception {
 		int index = line.indexOf(stateMatch);
-		String result = line.substring(index+stateMatch.length());
+		String result = line.substring(index + stateMatch.length());
 		ddi3Helper.createStatementItem(result.trim());
 	}
 
 	private void createComputationItem(String line) throws Exception {
 		String params[] = line.split(" ");
-		
-		// varref params[1]		
+
+		// varref params[1]
 		// code params[2]
 		// label params[3]
 		// statement
@@ -307,7 +309,7 @@ public class Wiki2Ddi3Scanner {
 			text.append(params[i]);
 			text.append(" ");
 		}
-		
+
 		ddi3Helper.createComputationItem(params[1], params[2], text.toString());
 	}
 }
