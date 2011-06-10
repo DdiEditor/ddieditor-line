@@ -200,42 +200,16 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			dataColLight.setVersion(datacollectionList.get(0).getVersion());
 		}
 
-		// question
-		for (QuestionSchemeDocument doc : ddi3Helper.getQuesList()) {
-			if (doc.getQuestionScheme().getQuestionItemList().isEmpty()) {
-				continue;
-			}
-			if (ddi3Helper.quesIsNewList.contains(doc.getQuestionScheme()
-					.getId())) {
-				// create
-				DdiManager.getInstance().createElement(doc,
-						dataColLight.getId(),
-						dataColLight.getVersion(),
-						"datacollection__DataCollection",
-						// parent sub-elements
-						new String[] { "Note", "Description", "Label",
-								"VersionRationale", "VersionResponsibility",
-								"CollectionEvent", "QuestionScheme",
-								"ControlConstructScheme",
-								"InterviewerInstructionScheme", "Instrument",
-								"ProcessingEvent" },
-						// stop elements
-						new String[] { "CollectionEvent", "QuestionScheme",
-								"ControlConstructScheme",
-								"InterviewerInstructionScheme", "Instrument",
-								"ProcessingEvent" },
-						// jump elements - none
-						new String[] {});
-			} else {
-				// update
-				DdiManager.getInstance().updateElement(doc,
-						doc.getQuestionScheme().getId(),
-						doc.getQuestionScheme().getVersion());
-			}
-		}
+		// questions
+		createQuestionScheme(ddi3Helper, false, dataColLight.getId(),
+				dataColLight.getVersion());
 
 		// multiple question
 		for (MultipleQuestionItemDocument doc : ddi3Helper.getMqueList()) {
+			// check if question scheme is created or exists
+			createQuestionScheme(ddi3Helper, true, dataColLight.getId(),
+					dataColLight.getVersion());
+
 			LightXmlObjectType quesLight = ddi3Helper.getMqueToQuesMap().get(
 					doc.getMultipleQuestionItem().getId());
 			DdiManager.getInstance().createElement(
@@ -243,10 +217,13 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					quesLight.getId(),
 					quesLight.getVersion(),
 					"QuestionScheme",
-					new String[] { "Description", "Label", "VersionRationale",
-							"VersionResponsibility" },
-					new String[] { "QuestionItem", "MultipleQuestionItem" },
-					new String[] {});
+					// (QuestionItem | MultipleQuestionItem)+
+					new String[] { "UserID", "VersionResponsibility",
+							"VersionRationale", "QuestionSchemeName", "Label",
+							"Description", "QuestionSchemeReference" },
+					new String[] {},
+					// "QuestionItem", 
+					new String[] { "MultipleQuestionItem" });
 		}
 
 		// control construct
@@ -346,6 +323,48 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 									"VariableSchemeReference" },
 							// jumpElements - jump over elements
 							new String[] { "DataRelationship" });
+		}
+	}
+
+	private void createQuestionScheme(Ddi3Helper ddi3Helper, boolean force,
+			String parentId, String parentVersion) throws DDIFtpException {
+		for (QuestionSchemeDocument doc : ddi3Helper.getQuesList()) {
+			if (doc.getQuestionScheme().getQuestionItemList().isEmpty()
+					&& !force) {
+				return;
+			}
+			if (ddi3Helper.quesIsNewList.contains(doc.getQuestionScheme()
+					.getId())) {
+				// create
+				DdiManager.getInstance().createElement(
+						doc,
+						parentId,
+						parentVersion,
+						"datacollection__DataCollection",
+						// parent sub-elements
+						new String[] { "Note", "Description", "Label",
+								"VersionRationale", "VersionResponsibility",
+								"CollectionEvent", "QuestionScheme",
+								"ControlConstructScheme",
+								"InterviewerInstructionScheme", "Instrument",
+								"ProcessingEvent" },
+						// stop elements
+						new String[] { "CollectionEvent", "QuestionScheme",
+								"ControlConstructScheme",
+								"InterviewerInstructionScheme", "Instrument",
+								"ProcessingEvent" },
+						// jump elements - none
+						new String[] {});
+
+				// clean
+				ddi3Helper.quesIsNewList
+						.remove(doc.getQuestionScheme().getId());
+			} else if (!force) {
+				// update
+				DdiManager.getInstance().updateElement(doc,
+						doc.getQuestionScheme().getId(),
+						doc.getQuestionScheme().getVersion());
+			}
 		}
 	}
 
