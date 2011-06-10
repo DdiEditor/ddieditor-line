@@ -70,6 +70,8 @@ public class LineWizard extends Wizard {
 		return true;
 	}
 
+	static String finishedwikiSyntax = "";
+
 	public boolean performFinish() {
 		try {
 			// universe
@@ -157,7 +159,6 @@ public class LineWizard extends Wizard {
 					}
 				}
 			}
-
 			ddi3Helper.initDdi3();
 
 			// parse file
@@ -166,10 +167,7 @@ public class LineWizard extends Wizard {
 		} catch (Exception e) {
 			Editor.showError(e, this.getClass().getName());
 			return false;
-		} finally {
-			unInitialize();
 		}
-
 		return true;
 	}
 

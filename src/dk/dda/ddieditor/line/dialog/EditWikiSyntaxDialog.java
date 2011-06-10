@@ -152,6 +152,12 @@ public class EditWikiSyntaxDialog extends Dialog {
 			}
 		});
 
+		if (input.getText() != null
+				&& input.getText().equals(
+						Translator.trans("line.wikieditdialog.edit.inittext"))) {
+			input.selectAll();
+		}
+		input.forceFocus();
 		return null;
 	}
 }

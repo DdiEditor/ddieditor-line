@@ -468,6 +468,16 @@ public class Ddi3Helper {
 				LiteralTextType.type);
 		XmlBeansUtil.setTextOnMixedElement(lTextType.addNewText(), text);
 
+		// name
+		StringBuilder name = new StringBuilder();
+		if (text.length() > LABEL_LENGTH) {
+			name.append(text.substring(0, LABEL_LENGTH));
+			name.append(" ...");
+		} else {
+			name.append(text);
+		}
+		type.addNewMultipleQuestionItemName().setStringValue(name.toString());
+
 		// control construct
 		this.mquecc = createQuestionConstruct(ques.getQuestionScheme().getId(),
 				ques.getQuestionScheme().getVersion(), type.getId(),
@@ -494,18 +504,20 @@ public class Ddi3Helper {
 		} else {
 			catIndex++;
 		}
+
 		// create category
 		CategoryType cat = cats.getCategoryScheme().addNewCategory();
 		addIdAndVersion(cat, ElementType.CATEGORY.getIdPrefix(), null);
 		setText(cat.addNewLabel(), text);
+
 		// assign category reference to code of code scheme
 		// get id of code scheme
-		UserIDType userId = null;
-		if (quei == null) {
+		if (quei == null) { // question item guard
 			throw new DDIFtpException(
 					"The Category is not specified in the context of a Question Item. \n"
-							+ "Category text is: " + text);
+							+ "Category text is: " + text, new Throwable());
 		}
+		UserIDType userId = null;
 		for (UserIDType userIdTmp : quei.getUserIDList()) {
 			if (userIdTmp.getType().equals(
 					Ddi3NamespaceHelper.QUEI_VAR_USER_ID_TYPE)) {
