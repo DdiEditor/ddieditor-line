@@ -26,6 +26,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.events.TraverseEvent;
 import org.eclipse.swt.events.TraverseListener;
+import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
@@ -74,6 +75,13 @@ public class LineWizard extends Wizard {
 
 	public boolean performFinish() {
 		try {
+			PlatformUI
+					.getWorkbench()
+					.getActiveWorkbenchWindow()
+					.getShell()
+					.setCursor(
+							new Cursor(PlatformUI.getWorkbench().getDisplay(),
+									SWT.CURSOR_WAIT));
 			// universe
 			if (resourcePage.uniRefSelectCombo.getResult() != null
 					&& checkRefSelection(resourcePage.uniRefSelectCombo
@@ -167,6 +175,14 @@ public class LineWizard extends Wizard {
 		} catch (Exception e) {
 			Editor.showError(e, this.getClass().getName());
 			return false;
+		} finally {
+			PlatformUI
+					.getWorkbench()
+					.getActiveWorkbenchWindow()
+					.getShell()
+					.setCursor(
+							new Cursor(PlatformUI.getWorkbench().getDisplay(),
+									SWT.CURSOR_ARROW));
 		}
 		return true;
 	}
