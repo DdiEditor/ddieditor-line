@@ -562,8 +562,21 @@ public class Ddi3Helper {
 			throw new DDIFtpException(e.getMessage());
 		}
 		List<CodeType> codes = codeScheme.getCodes();
-		codes.get(catIndex).addNewCategoryReference().addNewID()
-				.setStringValue(cat.getId());
+
+		try {
+			codes.get(catIndex).addNewCategoryReference().addNewID()
+					.setStringValue(cat.getId());
+		} catch (IndexOutOfBoundsException e) {
+			String idStr = "";
+			if (!quei.getQuestionItemNameList().isEmpty()) {
+				idStr = ((NameType) XmlBeansUtil.getDefaultLangElement(quei
+						.getQuestionItemNameList())).getStringValue();
+			} else
+				idStr = quei.getId();
+			throw new DDIFtpException(
+					Translator.trans("line.error.nocodetocategory"),
+					new Object[] { text, idStr, userId.getStringValue() }, new Throwable());
+		}
 		codeSchemedao.update(codeScheme);
 	}
 
