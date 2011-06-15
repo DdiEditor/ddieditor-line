@@ -184,6 +184,8 @@ public class LineWizard extends Wizard {
 							new Cursor(PlatformUI.getWorkbench().getDisplay(),
 									SWT.CURSOR_ARROW));
 		}
+
+		unInitialize();
 		return true;
 	}
 

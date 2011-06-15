@@ -1,5 +1,6 @@
 package dk.dda.ddieditor.line.command;
 
+import java.util.Iterator;
 import java.util.List;
 
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptSchemeDocument;
@@ -219,10 +220,10 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					"QuestionScheme",
 					// (QuestionItem | MultipleQuestionItem)+
 					new String[] { "UserID", "VersionResponsibility",
-							"VersionRationale", "QuestionSchemeName", "Label",
-							"Description", "QuestionSchemeReference" },
-					new String[] {},
-					// "QuestionItem", 
+							"VersionRationale", "QuestionSchemeName",
+							"reuseable__Label", "Description",
+							"QuestionSchemeReference" }, new String[] {},
+					// "QuestionItem",
 					new String[] { "MultipleQuestionItem" });
 		}
 
@@ -328,11 +329,18 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 
 	private void createQuestionScheme(Ddi3Helper ddi3Helper, boolean force,
 			String parentId, String parentVersion) throws DDIFtpException {
-		for (QuestionSchemeDocument doc : ddi3Helper.getQuesList()) {
+		for (Iterator<QuestionSchemeDocument> iterator = ddi3Helper
+				.getQuesList().iterator(); iterator.hasNext();) {
+			QuestionSchemeDocument doc = iterator.next();
 			if (doc.getQuestionScheme().getQuestionItemList().isEmpty()
 					&& !force) {
-				return;
+				if (iterator.hasNext()) {
+					continue;
+				} else {
+					return;
+				}
 			}
+
 			if (ddi3Helper.quesIsNewList.contains(doc.getQuestionScheme()
 					.getId())) {
 				// create

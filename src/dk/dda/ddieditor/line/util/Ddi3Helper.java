@@ -408,7 +408,6 @@ public class Ddi3Helper {
 							.getId(), cocs.getControlConstructScheme()
 							.getVersion(), qc.getId(), qc.getVersion()));
 
-			quei = result;
 		} else {
 			// pseudo var id map
 			pseudoVarIdToCcIdMap
@@ -418,6 +417,7 @@ public class Ddi3Helper {
 									.getControlConstructScheme().getVersion(),
 									mquecc.getId(), mquecc.getVersion()));
 		}
+		quei = result;
 	}
 
 	private QuestionConstructType createQuestionConstruct(String parentId,
@@ -575,7 +575,8 @@ public class Ddi3Helper {
 				idStr = quei.getId();
 			throw new DDIFtpException(
 					Translator.trans("line.error.nocodetocategory"),
-					new Object[] { text, idStr, userId.getStringValue() }, new Throwable());
+					new Object[] { text, idStr, userId.getStringValue() },
+					new Throwable());
 		}
 		codeSchemedao.update(codeScheme);
 	}
