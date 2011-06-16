@@ -75,7 +75,7 @@ public class Wiki2Ddi3Scanner {
 	Pattern queiPattern = Pattern.compile("\\*+ ?[vV][1-9]++");
 	Pattern mquePattern = Pattern.compile(" ?'{3}.+'{3}");
 	Pattern catePattern = Pattern.compile("\\*+ ?");
-
+	
 	String compMatch = "'''''comp'''''";
 	String stateMatch = "'''''state'''''";
 	String ifThenElseMatch = "'''''ifthenelse'''''";
@@ -110,10 +110,6 @@ public class Wiki2Ddi3Scanner {
 			createQuestion(line);
 			return;
 		}
-		if (difineLine(line, mquePattern)) {
-			createMultipleQuestion(line);
-			return;
-		}
 		if (difineLine(line, catePattern)) {
 			createCategory(line);
 			return;
@@ -128,6 +124,10 @@ public class Wiki2Ddi3Scanner {
 		}
 		if (line.indexOf(stateMatch) > -1) {
 			createStatementItem(line);
+			return;
+		}
+		if (difineLine(line, mquePattern)) {
+			createMultipleQuestion(line);
 			return;
 		}
 
