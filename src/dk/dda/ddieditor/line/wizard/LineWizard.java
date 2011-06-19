@@ -2,6 +2,7 @@ package dk.dda.ddieditor.line.wizard;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 
@@ -10,6 +11,7 @@ import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
 import org.ddialliance.ddieditor.model.resource.DDIResourceType;
 import org.ddialliance.ddieditor.persistenceaccess.PersistenceManager;
 import org.ddialliance.ddieditor.ui.editor.Editor;
+import org.ddialliance.ddieditor.ui.util.DialogUtil;
 import org.ddialliance.ddieditor.ui.view.Messages;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
@@ -40,6 +42,7 @@ import org.jamwiki.parser.ParserOutput;
 import org.jamwiki.parser.jflex.JFlexParser;
 
 import dk.dda.ddieditor.line.dialog.EditWikiSyntaxDialog;
+import dk.dda.ddieditor.line.osgi.Activator;
 import dk.dda.ddieditor.line.util.Ddi3Helper;
 import dk.dda.ddieditor.line.util.Wiki2Ddi3Scanner;
 
@@ -171,7 +174,7 @@ public class LineWizard extends Wizard {
 
 			// parse file
 			Wiki2Ddi3Scanner wiki2Ddi3Scanner = new Wiki2Ddi3Scanner(ddi3Helper);
-			wiki2Ddi3Scanner.startScanning(WikiPage.wikiSyntax);
+			wiki2Ddi3Scanner.startScanning(WikiPage.wikiSyntax, true);
 		} catch (Exception e) {
 			Editor.showError(e, this.getClass().getName());
 			return false;
@@ -224,7 +227,34 @@ public class LineWizard extends Wizard {
 		return wikiSyntax.toString();
 	}
 
-	public static void displayWiki(String wikiSyntax, Browser browser) {
+	public static void displayWiki(String wikiSyntax, Browser browser,
+			boolean validateSyntax) {
+		if (validateSyntax) {
+			Wiki2Ddi3Scanner scanner = new Wiki2Ddi3Scanner();
+			try {
+				scanner.startScanning(wikiSyntax, false);
+			} catch (Exception e) {
+				new Editor().showError(e);
+			}
+
+			if (!scanner.errorList.isEmpty()) {
+				StringBuilder result = new StringBuilder();
+				for (Iterator<String> iterator = scanner.errorList.iterator(); iterator
+						.hasNext();) {
+					result.append(iterator.next());
+					if (iterator.hasNext()) {
+						result.append("\n");
+					}
+				}
+
+				DialogUtil.errorDialog(PlatformUI.getWorkbench()
+						.getActiveWorkbenchWindow().getShell(),
+						Activator.PLUGIN_ID,
+						Translator.trans("line.errortitle"), result.toString(),
+						new Throwable());
+			}
+		}
+
 		// parse wiki text
 		ParserInput parserInput = new ParserInput();
 		parserInput.setTopicName("");
@@ -237,9 +267,8 @@ public class LineWizard extends Wizard {
 			if (browser != null) {
 				browser.setText(html);
 			}
-		} catch (ParserException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		} catch (ParserException e) {
+			new Editor().showError(e);
 		}
 	}
 }
@@ -281,7 +310,7 @@ class WikiPage extends WizardPage {
 		// read in file
 		WikiPage.wikiSyntax = LineWizard.readFile(filename);
 		// parse in browser
-		LineWizard.displayWiki(WikiPage.wikiSyntax, browser);
+		LineWizard.displayWiki(WikiPage.wikiSyntax, browser, true);
 	}
 
 	@Override
@@ -348,7 +377,7 @@ class WikiPage extends WizardPage {
 					WikiPage.wikiSyntax = wikiSyntax;
 
 					// parse in browser
-					LineWizard.displayWiki(dialog.result, browser);
+					LineWizard.displayWiki(dialog.result, browser, false);
 
 					// check save
 					if (dialog.fileName != null && !dialog.fileName.equals("")) {
@@ -400,7 +429,7 @@ class PathSelectionListener implements SelectionListener {
 		WikiPage.wikiSyntax = LineWizard.readFile(WikiPage.fileName);
 
 		// parse in browser
-		LineWizard.displayWiki(WikiPage.wikiSyntax, browser);
+		LineWizard.displayWiki(WikiPage.wikiSyntax, browser, true);
 
 		// set page complete
 		page.setPageComplete(true);

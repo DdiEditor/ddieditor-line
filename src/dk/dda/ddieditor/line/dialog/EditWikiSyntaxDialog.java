@@ -80,14 +80,14 @@ public class EditWikiSyntaxDialog extends Dialog {
 		// wikiSyntax
 		if (wikiSyntax != null && !wikiSyntax.equals("")) {
 			input.setText(wikiSyntax);
-			LineWizard.displayWiki(input.getText(), browser);
+			LineWizard.displayWiki(input.getText(), browser, false);
 			result = input.getText();
 		}
 		// file
 		else if (fileName != null && !fileName.equals("")) {
 			String wikiSyntax = LineWizard.readFile(fileName);
 			input.setText(wikiSyntax);
-			LineWizard.displayWiki(input.getText(), browser);
+			LineWizard.displayWiki(input.getText(), browser, true);
 			result = input.getText();
 		}
 
@@ -104,7 +104,7 @@ public class EditWikiSyntaxDialog extends Dialog {
 		parse.addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				LineWizard.displayWiki(input.getText(), browser);
+				LineWizard.displayWiki(input.getText(), browser, true);
 			}
 
 			@Override

@@ -1,11 +1,14 @@
 package dk.dda.ddieditor.line.util;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.ddialliance.ddiftp.util.DDIFtpException;
+import org.ddialliance.ddiftp.util.Translator;
 import org.ddialliance.ddiftp.util.log.Log;
 import org.ddialliance.ddiftp.util.log.LogFactory;
 import org.ddialliance.ddiftp.util.log.LogType;
@@ -23,6 +26,10 @@ public class Wiki2Ddi3Scanner {
 		this.ddi3Helper = ddi3Helper;
 	}
 
+	public Wiki2Ddi3Scanner() {
+		// default ;- )
+	}
+
 	public Ddi3Helper getDdi3Helper() {
 		return ddi3Helper;
 	}
@@ -38,9 +45,9 @@ public class Wiki2Ddi3Scanner {
 	 *            file to scan
 	 * @throws Exception
 	 */
-	public void startScanning(File file) throws Exception {
+	public void startScanning(File file, boolean create) throws Exception {
 		scanner = new Scanner(file, "utf-8");
-		startScanning();
+		startScanning(create);
 	}
 
 	/**
@@ -50,22 +57,25 @@ public class Wiki2Ddi3Scanner {
 	 *            string content
 	 * @throws Exception
 	 */
-	public void startScanning(String content) throws Exception {
+	public void startScanning(String content, boolean create) throws Exception {
 		scanner = new Scanner(content);
-		startScanning();
+		startScanning(create);
 	}
 
-	private void startScanning() throws Exception {
+	private void startScanning(boolean create) throws Exception {
+		errorList.clear();
 		String current = null;
 		while (scanner.hasNextLine()) {
 			++lineNo;
 			current = scanner.nextLine();
-			processLine(current);
+			processLine(current, create);
 		}
 		scanner.close();
 
 		// update refs
-		ddi3Helper.postResolve();
+		if (create) {
+			ddi3Helper.postResolve();
+		}
 	}
 
 	Pattern variNamePattern = Pattern.compile("[vV][1-9]+[0-9]?");
@@ -75,15 +85,18 @@ public class Wiki2Ddi3Scanner {
 	Pattern queiPattern = Pattern.compile("\\*+ ?[vV][1-9]++");
 	Pattern mquePattern = Pattern.compile(" ?'{3}.+'{3}");
 	Pattern catePattern = Pattern.compile("\\*+ ?");
-	
+
 	String compMatch = "'''''comp'''''";
 	String stateMatch = "'''''state'''''";
 	String ifThenElseMatch = "'''''ifthenelse'''''";
 
-	public void processLine(String line) throws Exception {
+	public List<String> errorList = new ArrayList<String>();
+
+	protected void processLine(String line, boolean create) throws Exception {
 		if (log.isDebugEnabled()) {
 			log.debug(lineNo + " - " + line);
 		}
+		String errorStr = null;
 
 		// check for empty input
 		if (line == null || line.equals("")) {
@@ -99,38 +112,53 @@ public class Wiki2Ddi3Scanner {
 		}
 
 		if (difineLine(line, quesPattern)) {
-			createQuestionScheme(line);
+			if (create) {
+				createQuestionScheme(line);
+			}
 			return;
 		}
 		if (difineLine(line, univPattern)) {
-			createUniverse(line);
+			if (create)
+				createUniverse(line);
 			return;
 		}
 		if (difineLine(line, queiPattern)) {
-			createQuestion(line);
+			if (create)
+				createQuestion(line);
 			return;
 		}
 		if (difineLine(line, catePattern)) {
-			createCategory(line);
+			if (create)
+				createCategory(line);
 			return;
 		}
 		if (line.indexOf(ifThenElseMatch) > -1) {
-			createIfThenElse(line);
+			if (create)
+				createIfThenElse(line, true);
 			return;
 		}
 		if (line.indexOf(compMatch) > -1) {
-			createComputationItem(line);
+			if (create)
+				createComputationItem(line);
 			return;
 		}
 		if (line.indexOf(stateMatch) > -1) {
-			createStatementItem(line);
+			if (create)
+				createStatementItem(line);
 			return;
 		}
 		if (difineLine(line, mquePattern)) {
-			createMultipleQuestion(line);
+			if (create)
+				createMultipleQuestion(line);
 			return;
 		}
 
+		// define error
+		if (errorStr == null) {
+			errorStr = Translator.trans("processLine.error.undefined",
+					new Object[] { lineNo + 1, line });
+		}
+		errorList.add(errorStr);
 		return;
 	}
 
@@ -259,7 +287,7 @@ public class Wiki2Ddi3Scanner {
 	 *            of '''''ifthenelse''''' >2 v6 v2 How many times a day?
 	 * @throws Exception
 	 */
-	private void createIfThenElse(String line) throws Exception {
+	private void createIfThenElse(String line, boolean create) throws Exception {
 		String params[] = line.split(" ");
 
 		// statement
@@ -287,8 +315,10 @@ public class Wiki2Ddi3Scanner {
 			params[4] = "V" + params[4].substring(1);
 		}
 
-		ddi3Helper.createIfThenElse(params[1], params[2], params[3], params[4],
-				text.toString().trim());
+		if (create) {
+			ddi3Helper.createIfThenElse(params[1], params[2], params[3],
+					params[4], text.toString().trim());
+		}
 	}
 
 	private void createStatementItem(String line) throws Exception {
