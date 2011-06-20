@@ -3,6 +3,7 @@ package dk.dda.ddieditor.line.command;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.xmlbeans.XmlOptions;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptualComponentDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.UniverseSchemeDocument;
@@ -14,8 +15,11 @@ import org.ddialliance.ddi3.xml.xmlbeans.datacollection.SequenceDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategorySchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.LogicalProductDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NoteDocument;
+import org.ddialliance.ddi3.xml.xmlbeans.reusable.VersionRationaleDocument;
 import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
+import org.ddialliance.ddieditor.persistenceaccess.PersistenceManager;
+import org.ddialliance.ddieditor.persistenceaccess.XQueryInsertKeyword;
 import org.ddialliance.ddieditor.ui.editor.Editor;
 import org.ddialliance.ddieditor.ui.model.ElementType;
 import org.ddialliance.ddieditor.ui.view.ViewManager;
@@ -126,7 +130,6 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			if (doc.getConceptScheme().getConceptList().isEmpty()) {
 				continue;
 			}
-			// TODO check this insert position
 			DdiManager.getInstance().createElement(
 					doc,
 					compLight.getId(),
@@ -160,6 +163,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 		List<LightXmlObjectType> datacollectionList = DdiManager.getInstance()
 				.getDataCollectionsLight(null, null, null, null)
 				.getLightXmlObjectList().getLightXmlObjectList();
+
 		if (datacollectionList.isEmpty()) {
 			// new data collection
 			DataCollectionDocument dataColDoc = DataCollectionDocument.Factory
@@ -172,30 +176,24 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			dataColLight.setId(dataColDoc.getDataCollection().getId());
 			dataColLight
 					.setVersion(dataColDoc.getDataCollection().getVersion());
-			// create
-			DdiManager.getInstance().createElement(dataColDoc,
-					studyUnitLight.getId(),
-					studyUnitLight.getVersion(),
-					"studyunit__StudyUnit",
-					// sub-elements
-					new String[] { "UserID", "VersionResponsibility",
-							"VersionRationale", "Citation", "Abstract",
-							"UniverseReference", "SeriesStatement",
-							"FundingInformation", "Purpose", "Coverage",
-							"AnalysisUnit", "AnalysisUnitsCovered",
-							"KindOfData", "OtherMaterial", "Note", "Embargo",
-							"ConceptualComponent",
-							"ConceptualComponentReference" },
-					// stop-elements
-					new String[] { "DataCollection", "DataCollectionReference",
-							"BaseLogicalProduct", "LogicalProductReference",
-							"PhysicalDataProduct",
-							"PhysicalDataProductReference", "PhysicalInstance",
-							"PhysicalInstanceReference", "Archive",
-							"ArchiveReference", "DDIProfile",
-							"DDIProfileReference" },
-					// jump-elements
-					new String[] {});
+
+			// insert after conceptual component
+			// TODO if no comp then fail
+			PersistenceManager.getInstance().insert(
+					DdiManager
+							.getInstance()
+							.getDdi3NamespaceHelper()
+							.substitutePrefixesFromElements(
+									dataColDoc.xmlText(DdiManager.getInstance()
+											.getXmlOptions())),
+					XQueryInsertKeyword.AFTER,
+					DdiManager.getInstance()
+							.getQueryElementString(compLight.getId(),
+									compLight.getVersion(),
+									"ConceptualComponent",
+									studyUnitLight.getId(),
+									studyUnitLight.getVersion(),
+									"studyunit__StudyUnit"));
 		} else {
 			dataColLight.setId(datacollectionList.get(0).getId());
 			dataColLight.setVersion(datacollectionList.get(0).getVersion());
@@ -218,13 +216,11 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					quesLight.getId(),
 					quesLight.getVersion(),
 					"QuestionScheme",
-					// (QuestionItem | MultipleQuestionItem)+
 					new String[] { "UserID", "VersionResponsibility",
 							"VersionRationale", "QuestionSchemeName",
 							"reuseable__Label", "Description",
 							"QuestionSchemeReference" }, new String[] {},
-					// "QuestionItem",
-					new String[] { "MultipleQuestionItem" });
+					new String[] { "QuestionItem", "MultipleQuestionItem" });
 		}
 
 		// control construct
