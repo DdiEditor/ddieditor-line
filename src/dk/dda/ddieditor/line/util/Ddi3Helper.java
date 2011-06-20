@@ -152,16 +152,7 @@ public class Ddi3Helper {
 		cons = consDoc;
 
 		// question scheme
-		if (ques == null) {
-			QuestionSchemeDocument quesDoc = QuestionSchemeDocument.Factory
-					.newInstance();
-			quesDoc.addNewQuestionScheme();
-			addIdAndVersion(quesDoc.getQuestionScheme(),
-					ElementType.QUESTION_SCHEME.getIdPrefix(), null);
-			quesList.add(quesDoc);
-			ques = quesDoc;
-			quesIsNewList.add(ques.getQuestionScheme().getId());
-		} else {
+		if (ques != null) {
 			quesList.add(ques);
 		}
 
@@ -262,6 +253,10 @@ public class Ddi3Helper {
 		return result;
 	}
 
+	private void createInitQuestionScheme() throws DDIFtpException {
+		createQuestionScheme("Default", "Using default question scheme");
+	}
+
 	public void createQuestionScheme(String label, String description)
 			throws DDIFtpException {
 		QuestionSchemeDocument result = QuestionSchemeDocument.Factory
@@ -303,6 +298,9 @@ public class Ddi3Helper {
 			result = mquem.getMultipleQuestionItem().getSubQuestions()
 					.addNewQuestionItem();
 		} else {
+			if (ques == null) {
+				createInitQuestionScheme();
+			}
 			result = ques.getQuestionScheme().addNewQuestionItem();
 		}
 		addIdAndVersion(result, ElementType.QUESTION_ITEM.getIdPrefix(), null);
@@ -478,6 +476,9 @@ public class Ddi3Helper {
 		}
 		type.addNewMultipleQuestionItemName().setStringValue(name.toString());
 
+		if (ques == null) {
+			createInitQuestionScheme();
+		}
 		// control construct
 		this.mquecc = createQuestionConstruct(ques.getQuestionScheme().getId(),
 				ques.getQuestionScheme().getVersion(), type.getId(),
@@ -742,20 +743,6 @@ public class Ddi3Helper {
 				ModelIdentifingType.Type_B.class);
 
 		// then reference
-		// TODO
-		// java.lang.NullPointerException
-		// at
-		// org.ddialliance.ddieditor.ui.model.ModelAccessor.setReference(ModelAccessor.java:19)
-		// at
-		// org.ddialliance.ddieditor.ui.model.instrument.IfThenElse.executeChange(IfThenElse.java:53)
-		// at
-		// org.ddialliance.ddieditor.ui.model.Model.applyChange(Model.java:101)
-		// at
-		// dk.dda.ddieditor.line.util.Ddi3Helper.createIfThenElse(Ddi3Helper.java:461)
-		// at
-		// dk.dda.ddieditor.line.util.Wiki2Ddi3Scanner.createIfThenElse(Wiki2Ddi3Scanner.java:282)
-		// at
-		// dk.dda.ddieditor.line.util.Wiki2Ddi3Scanner.processLine(Wiki2Ddi3Scanner.java:118)
 		model.applyChange(
 				createLightXmlObject(cocs.getControlConstructScheme().getId(),
 						cocs.getControlConstructScheme().getVersion(),
@@ -764,7 +751,8 @@ public class Ddi3Helper {
 
 		// else reference
 		if (elze != null) {
-			model.applyChange(createLightXmlObject(null, null, elze.substring(1), null),
+			model.applyChange(
+					createLightXmlObject(null, null, elze.substring(1), null),
 					ModelIdentifingType.Type_D.class);
 			postCleanMainSeqItems.add(elze.substring(1));
 		}
