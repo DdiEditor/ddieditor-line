@@ -764,7 +764,7 @@ public class Ddi3Helper {
 
 		// else reference
 		if (elze != null) {
-			model.applyChange(createLightXmlObject(null, null, elze, null),
+			model.applyChange(createLightXmlObject(null, null, elze.substring(1), null),
 					ModelIdentifingType.Type_D.class);
 			postCleanMainSeqItems.add(elze.substring(1));
 		}
