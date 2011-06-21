@@ -63,12 +63,14 @@ import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectListDocument
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
 import org.ddialliance.ddieditor.model.namespace.ddi3.Ddi3NamespaceHelper;
 import org.ddialliance.ddieditor.ui.dbxml.code.CodeSchemeDao;
+import org.ddialliance.ddieditor.ui.dbxml.variable.VariableDao;
 import org.ddialliance.ddieditor.ui.model.ElementType;
 import org.ddialliance.ddieditor.ui.model.ModelAccessor;
 import org.ddialliance.ddieditor.ui.model.ModelIdentifingType;
 import org.ddialliance.ddieditor.ui.model.code.CodeScheme;
 import org.ddialliance.ddieditor.ui.model.instrument.ComputationItem;
 import org.ddialliance.ddieditor.ui.model.instrument.IfThenElse;
+import org.ddialliance.ddieditor.ui.model.variable.Variable;
 import org.ddialliance.ddieditor.ui.util.DialogUtil;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
@@ -111,6 +113,7 @@ public class Ddi3Helper {
 	public boolean cocsIsNew = false;
 	public SequenceType mainSeq;
 	CodeSchemeDao codeSchemedao;
+	VariableDao variabledao;
 	private List<LightXmlObjectType> vars = null;
 
 	Map<String, LightXmlObjectType> pseudoVarIdToCcIdMap = new HashMap<String, LightXmlObjectType>();
@@ -183,6 +186,9 @@ public class Ddi3Helper {
 			setText(mainSeq.addNewLabel(), "Main sequence");
 			addIdAndVersion(mainSeq, ElementType.SEQUENCE.getIdPrefix(), null);
 		}
+		
+		// variables
+		variabledao = new VariableDao();
 	}
 
 	// =universe label=universe description
@@ -200,7 +206,7 @@ public class Ddi3Helper {
 			setText(result.addNewHumanReadable(), description);
 		univ = result;
 	}
-
+	
 	/**
 	 * Get Value Representation of Variable.
 	 * 
@@ -212,21 +218,11 @@ public class Ddi3Helper {
 	private CustomType getValueRepresentation(String pseudoVariRef)
 			throws DDIFtpException {
 		CustomType result = null;
-		if (vars == null) {
-			vars = new ArrayList<LightXmlObjectType>();
-			try {
-				vars = DdiManager.getInstance()
-						.getVariablesLightPlus(null, null, null, null)
-						.getLightXmlObjectList().getLightXmlObjectList();
-			} catch (Exception e) {
-				throw new DDIFtpException(e.getMessage());
-			}
-		}
-
+		
 		String id = "";
 		boolean variFound = false;
 		// for all light variable elements
-		for (LightXmlObjectType vari : vars) {
+		for (LightXmlObjectType vari : getVariablesLight()) {
 			// for all custom list elements of this variable
 			for (CustomListType cusList : vari.getCustomListList()) {
 				// get pseudo variable ID
@@ -681,17 +677,72 @@ public class Ddi3Helper {
 		model.setCreate(true);
 		return model;
 	}
+	
+	private Variable getVariable(String id, String version, String parentId,
+			String parentVersion) throws Exception {
 
+		return (Variable) variabledao.getModel(id, version, parentId,
+				parentVersion);
+	}
+
+	private void setUniverseRefOnVariable(Variable variable,
+			LightXmlObjectType universe) throws Exception {
+		variable.setCreate(true);
+		variable.executeChange(universe, ModelIdentifingType.Type_C.class);
+		new VariableDao().update(variable);
+	}
+
+	private void updateVariableUniverseReference(String pseudoVariRef,
+			LightXmlObjectType univerId) throws Exception {
+
+		String pseudoVariableId = "";
+		String variableId = "";
+		String variableVersion = "";
+		String parentId = "";
+		String parentVersion = "";
+		boolean variFound = false;
+		// for all light variable elements
+		for (LightXmlObjectType vari : getVariablesLight()) {
+			// for all custom list elements of this variable
+			for (CustomListType cusList : vari.getCustomListList()) {
+				// get pseudo variable ID
+				if (cusList.getType().equals(VARI_NAME)) {
+					for (CustomType cusQueiRef : cusList.getCustomList()) {
+						pseudoVariableId = XmlBeansUtil.getTextOnMixedElement(cusQueiRef);
+						if (pseudoVariableId.substring(1).equals(pseudoVariRef.substring(1))) {
+							variFound = true;
+							variableId = vari.getId();
+							variableVersion = XmlBeansUtil.getXmlAttributeValue(vari.xmlText(), "version=\"");
+							parentId = XmlBeansUtil.getXmlAttributeValue(vari.xmlText(), "parentId=\"");
+							parentVersion = XmlBeansUtil.getXmlAttributeValue(vari.xmlText(), "parentVersion=\"");
+							continue;
+						}
+					}
+				}
+			}
+			if (variFound) {
+				break;
+			}
+		}
+		if (!variFound) {
+			throw new Exception("Variable not found");
+		}
+		// get variable and assign universe reference
+		setUniverseRefOnVariable(
+				getVariable(variableId, variableVersion, parentId, parentVersion),
+				univerId);
+	}
+	
 	public void createIfThenElse(String queiRef, String condition, String then,
 			String elze, String statementText) throws Exception {
 		// universe
 		UniverseType prevUniv = univ;
 		createUniverse(getLabelText(statementText), getLabelText(statementText));
-		pseudoVarIdToUnivIdMap.put(
-				then,
-				createLightXmlObject(unis.getUniverseScheme().getId(), unis
-						.getUniverseScheme().getVersion(), univ.getId(), univ
-						.getVersion()));
+		LightXmlObjectType univLight = createLightXmlObject(unis
+				.getUniverseScheme().getId(), unis.getUniverseScheme()
+				.getVersion(), univ.getId(), univ.getVersion());
+		pseudoVarIdToUnivIdMap.put(then, univLight);
+		updateVariableUniverseReference(then, univLight);
 
 		// seq
 		SequenceType seq = (SequenceType) cocs
@@ -974,13 +1025,12 @@ public class Ddi3Helper {
 		}
 	}
 
-	List<LightXmlObjectType> variList = null;
-
 	private List<LightXmlObjectType> getVariablesLight() throws DDIFtpException {
-		if (variList == null) {
+		if (vars == null) {
+            vars = new ArrayList<LightXmlObjectType>();
 			try {
-				variList = DdiManager.getInstance()
-						.getVariablesLight(null, null, null, null)
+				vars = DdiManager.getInstance()
+						.getVariablesLightPlus(null, null, null, null)
 						.getLightXmlObjectList().getLightXmlObjectList();
 			} catch (Exception e) {
 				if (!(e instanceof DDIFtpException)) {
@@ -990,7 +1040,7 @@ public class Ddi3Helper {
 				}
 			}
 		}
-		return variList;
+		return vars;
 	}
 
 	private void cleanSequenceForDublicateCcRefs() throws DDIFtpException {
@@ -1059,7 +1109,9 @@ public class Ddi3Helper {
 				for (QuestionItemType quei : ques.getQuestionScheme()
 						.getQuestionItemList()) {
 					if (!quei.getUserIDList().isEmpty()
-							&& quei.getUserIDArray(0).equals(entry.getKey())) {
+							&& quei.getUserIDArray(0).getStringValue()
+									.substring(1)
+									.equals(entry.getKey().substring(1))) {
 
 						// create new note
 						createQueiRefToUnivNote(
