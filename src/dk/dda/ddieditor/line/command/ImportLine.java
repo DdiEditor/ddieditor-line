@@ -136,24 +136,24 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					compLight.getVersion(),
 					"ConceptualComponent",
 					// parentSubElements - elements of parent
-					new String[] { "ConceptualComponentModuleName", "Label",
+					new String[] { "VersionResponsibility", "VersionRationale",
+							"ConceptualComponentModuleName", "Label",
 							"Description", "Coverage", "OtherMaterial", "Note",
 							"ConceptScheme", "ConceptSchemeReference",
 							"UniverseScheme", "UniverseSchemeReference",
 							"GeographicStructureScheme",
 							"GeographicStructureSchemeReference",
 							"GeographicLocationScheme",
-							"GeographicLocationSchemeReference",
-							"VersionRationale", "VersionResponsibility" },
+							"GeographicLocationSchemeReference", },
 					// stopElements - do not search below ...
-					new String[] { "ConceptScheme", "ConceptSchemeReference",
+					new String[] { "ConceptSchemeReference",
 							"UniverseScheme", "UniverseSchemeReference",
 							"GeographicStructureScheme",
 							"GeographicStructureSchemeReference",
 							"GeographicLocationScheme",
 							"GeographicLocationSchemeReference" },
 					// jumpElements - jump over elements
-					new String[] {});
+					new String[] { "ConceptScheme" });
 		}
 
 		// data collection
@@ -306,20 +306,21 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 				continue;
 			}
 
-			DdiManager.getInstance()
+			DdiManager
+					.getInstance()
 					.createElement(doc,
 							logProdLight.getId(),
 							logProdLight.getVersion(),
 							"logicalproduct__LogicalProduct",
 							// parentSubElements - elements of parent
 							new String[] { "VersionRationale",
-									"VersionResponsibility" },
+									"VersionResponsibility", "LogicalProductName", "Label", "Description", "Coverage" },
 							// stopElements - do not search below ...
-							new String[] { "CategoryScheme", "CodeScheme",
-									"CodeSchemeReference", "VariableScheme",
-									"VariableSchemeReference" },
+							new String[] { "CodeScheme", "CodeSchemeReference",
+									"VariableScheme", "VariableSchemeReference" },
 							// jumpElements - jump over elements
-							new String[] { "DataRelationship" });
+							new String[] { "DataRelationship", "OtherMaterial",
+									"Note", "CategoryScheme",  });
 		}
 	}
 
@@ -346,19 +347,19 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 						parentVersion,
 						"datacollection__DataCollection",
 						// parent sub-elements
-						new String[] { "Note", "Description", "Label",
-								"VersionRationale", "VersionResponsibility",
+						new String[] { "VersionResponsibility", "VersionRationale",
+								"DataCollectionModuleName", "Label", "Description", 
+								"Covarage", "OtherMaterial", "Note", "Methodology",   
 								"CollectionEvent", "QuestionScheme",
 								"ControlConstructScheme",
 								"InterviewerInstructionScheme", "Instrument",
 								"ProcessingEvent" },
 						// stop elements
-						new String[] { "CollectionEvent", "QuestionScheme",
-								"ControlConstructScheme",
+						new String[] { "ControlConstructScheme",
 								"InterviewerInstructionScheme", "Instrument",
 								"ProcessingEvent" },
-						// jump elements - none
-						new String[] {});
+						// jump elements
+						new String[] {"CollectionEvent", "QuestionScheme"});
 
 				// clean
 				ddi3Helper.quesIsNewList
