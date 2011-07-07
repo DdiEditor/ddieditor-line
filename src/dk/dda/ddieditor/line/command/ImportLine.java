@@ -218,7 +218,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					"QuestionScheme",
 					new String[] { "UserID", "VersionResponsibility",
 							"VersionRationale", "QuestionSchemeName",
-							"reuseable__Label", "Description",
+							"Label", "Description",
 							"QuestionSchemeReference" }, new String[] {},
 					new String[] { "QuestionItem", "MultipleQuestionItem" });
 		}
