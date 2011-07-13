@@ -15,6 +15,10 @@ import org.ddialliance.ddieditor.ui.util.DialogUtil;
 import org.ddialliance.ddieditor.ui.view.Messages;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
+import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.IWizardPage;
@@ -78,6 +82,18 @@ public class LineWizard extends Wizard {
 
 	public boolean performFinish() {
 		try {
+			// clean up problem view
+			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+			IMarker[] markers = root.findMarkers(IMarker.TEXT, false,
+					IResource.DEPTH_ZERO);
+			for (int i = 0; i < markers.length; i++) {
+				String message = (String) markers[i]
+						.getAttribute(IMarker.SOURCE_ID);
+				if (message != null && message.equals(Activator.PLUGIN_ID)) {
+					markers[i].delete();
+				}
+			}
+
 			PlatformUI
 					.getWorkbench()
 					.getActiveWorkbenchWindow()
@@ -176,6 +192,11 @@ public class LineWizard extends Wizard {
 			Wiki2Ddi3Scanner wiki2Ddi3Scanner = new Wiki2Ddi3Scanner(ddi3Helper);
 			wiki2Ddi3Scanner.startScanning(WikiPage.wikiSyntax, true);
 		} catch (Exception e) {
+			// quietly quit when decided
+			if (e instanceof DDIFtpException
+					&& ((DDIFtpException) e).getRealThrowable() instanceof InterruptedException) {
+				return false;
+			}
 			Editor.showError(e, this.getClass().getName());
 			return false;
 		} finally {

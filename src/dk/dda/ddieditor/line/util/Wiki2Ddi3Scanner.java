@@ -7,6 +7,7 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.ddialliance.ddieditor.ui.model.ElementType;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
 import org.ddialliance.ddiftp.util.log.Log;
@@ -96,6 +97,7 @@ public class Wiki2Ddi3Scanner {
 		if (log.isDebugEnabled()) {
 			log.debug(lineNo + " - " + line);
 		}
+		ddi3Helper.setLineNo(lineNo);
 		String errorStr = null;
 
 		// check for empty input
@@ -233,7 +235,7 @@ public class Wiki2Ddi3Scanner {
 	 * @param line
 	 *            of '* '''Multiple Question text''''
 	 */
-	private void createMultipleQuestion(String line) {
+	private void createMultipleQuestion(String line) throws Exception {
 		String text = null;
 		int index = line.indexOf("'''");
 		if (index > -1) {
@@ -248,12 +250,7 @@ public class Wiki2Ddi3Scanner {
 				ddi3Helper.unsetMultipleQuestion();
 				return;
 			}
-			try {
-				ddi3Helper.createMultipleQuestion(text);
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			ddi3Helper.createMultipleQuestion(text);
 		}
 	}
 
@@ -289,42 +286,51 @@ public class Wiki2Ddi3Scanner {
 	 */
 	private void createIfThenElse(String line, boolean create) throws Exception {
 		String params[] = line.split(" ");
+		try {
+			// statement
+			StringBuilder text = new StringBuilder();
+			for (int i = 5; i < params.length; i++) {
+				text.append(params[i]);
+				text.append(" ");
+			}
 
-		// statement
-		StringBuilder text = new StringBuilder();
-		for (int i = 5; i < params.length; i++) {
-			text.append(params[i]);
-			text.append(" ");
-		}
+			// ref vaiable
 
-		// ref vaiable
+			// condition
+			// params[2];
 
-		// condition
-		// params[2];
+			// then
+			if (variNamePattern.matcher(params[3]).find()) {
+				params[3] = "v" + params[3].substring(1);
+			}
 
-		// then
-		if (variNamePattern.matcher(params[3]).find()) {
-			params[3] = "v" + params[3].substring(1);
-		}
+			// else
+			// params[4]
+			if (params[4].equals("na")) {
+				params[4] = null;
+			} else if (variNamePattern.matcher(params[4]).find()) {
+				params[4] = "v" + params[4].substring(1);
+			}
 
-		// else
-		// params[4]
-		if (params[4].equals("na")) {
-			params[4] = null;
-		} else if (variNamePattern.matcher(params[4]).find()) {
-			params[4] = "v" + params[4].substring(1);
-		}
-
-		if (create) {
-			ddi3Helper.createIfThenElse(params[1], params[2], params[3],
-					params[4], text.toString().trim());
+			if (create) {
+				ddi3Helper.createIfThenElse(params[1], params[2], params[3],
+						params[4], text.toString().trim());
+			}
+		} catch (Exception e) {
+			ddi3Helper.handleParseError(ElementType.IF_THEN_ELSE,
+					Translator.trans("line.parse.errorifthenelse", line));
 		}
 	}
 
 	private void createStatementItem(String line) throws Exception {
-		int index = line.indexOf(stateMatch);
-		String result = line.substring(index + stateMatch.length());
-		ddi3Helper.createStatementItem(result.trim());
+		try {
+			int index = line.indexOf(stateMatch);
+			String result = line.substring(index + stateMatch.length());
+			ddi3Helper.createStatementItem(result.trim());
+		} catch (Exception e) {
+			ddi3Helper.handleParseError(ElementType.STATEMENT_ITEM,
+					Translator.trans("line.parse.errorstate", line));
+		}
 	}
 
 	private void createComputationItem(String line) throws Exception {
@@ -334,12 +340,18 @@ public class Wiki2Ddi3Scanner {
 		// code params[2]
 		// label params[3]
 		// statement
-		StringBuilder text = new StringBuilder();
-		for (int i = 3; i < params.length; i++) {
-			text.append(params[i]);
-			text.append(" ");
-		}
+		try {
+			StringBuilder text = new StringBuilder();
+			for (int i = 3; i < params.length; i++) {
+				text.append(params[i]);
+				text.append(" ");
+			}
 
-		ddi3Helper.createComputationItem(params[1], params[2], text.toString());
+			ddi3Helper.createComputationItem(params[1], params[2],
+					text.toString());
+		} catch (Exception e) {
+			ddi3Helper.handleParseError(ElementType.STATEMENT_ITEM,
+					Translator.trans("line.parse.errorcomputation", line));
+		}
 	}
 }

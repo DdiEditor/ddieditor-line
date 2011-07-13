@@ -3,7 +3,6 @@ package dk.dda.ddieditor.line.command;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.xmlbeans.XmlOptions;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptualComponentDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.UniverseSchemeDocument;
@@ -15,20 +14,25 @@ import org.ddialliance.ddi3.xml.xmlbeans.datacollection.SequenceDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategorySchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.LogicalProductDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NoteDocument;
-import org.ddialliance.ddi3.xml.xmlbeans.reusable.VersionRationaleDocument;
 import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
 import org.ddialliance.ddieditor.persistenceaccess.PersistenceManager;
 import org.ddialliance.ddieditor.persistenceaccess.XQueryInsertKeyword;
 import org.ddialliance.ddieditor.ui.editor.Editor;
 import org.ddialliance.ddieditor.ui.model.ElementType;
+import org.ddialliance.ddieditor.ui.util.DialogUtil;
 import org.ddialliance.ddieditor.ui.view.ViewManager;
 import org.ddialliance.ddiftp.util.DDIFtpException;
+import org.ddialliance.ddiftp.util.Translator;
 import org.ddialliance.ddiftp.util.log.Log;
 import org.ddialliance.ddiftp.util.log.LogFactory;
 import org.ddialliance.ddiftp.util.log.LogType;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.preferences.ConfigurationScope;
 import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.WizardDialog;
@@ -36,6 +40,7 @@ import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.preferences.ScopedPreferenceStore;
 
+import dk.dda.ddieditor.line.osgi.Activator;
 import dk.dda.ddieditor.line.util.Ddi3Helper;
 import dk.dda.ddieditor.line.wizard.LineWizard;
 
@@ -146,8 +151,8 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 							"GeographicLocationScheme",
 							"GeographicLocationSchemeReference", },
 					// stopElements - do not search below ...
-					new String[] { "ConceptSchemeReference",
-							"UniverseScheme", "UniverseSchemeReference",
+					new String[] { "ConceptSchemeReference", "UniverseScheme",
+							"UniverseSchemeReference",
 							"GeographicStructureScheme",
 							"GeographicStructureSchemeReference",
 							"GeographicLocationScheme",
@@ -217,9 +222,9 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					quesLight.getVersion(),
 					"QuestionScheme",
 					new String[] { "UserID", "VersionResponsibility",
-							"VersionRationale", "QuestionSchemeName",
-							"Label", "Description",
-							"QuestionSchemeReference" }, new String[] {},
+							"VersionRationale", "QuestionSchemeName", "Label",
+							"Description", "QuestionSchemeReference" },
+					new String[] {},
 					new String[] { "QuestionItem", "MultipleQuestionItem" });
 		}
 
@@ -306,21 +311,20 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 				continue;
 			}
 
-			DdiManager
-					.getInstance()
-					.createElement(doc,
-							logProdLight.getId(),
-							logProdLight.getVersion(),
-							"logicalproduct__LogicalProduct",
-							// parentSubElements - elements of parent
-							new String[] { "VersionRationale",
-									"VersionResponsibility", "LogicalProductName", "Label", "Description", "Coverage" },
-							// stopElements - do not search below ...
-							new String[] { "CodeScheme", "CodeSchemeReference",
-									"VariableScheme", "VariableSchemeReference" },
-							// jumpElements - jump over elements
-							new String[] { "DataRelationship", "OtherMaterial",
-									"Note", "CategoryScheme",  });
+			DdiManager.getInstance().createElement(doc,
+					logProdLight.getId(),
+					logProdLight.getVersion(),
+					"logicalproduct__LogicalProduct",
+					// parentSubElements - elements of parent
+					new String[] { "VersionRationale", "VersionResponsibility",
+							"LogicalProductName", "Label", "Description",
+							"Coverage" },
+					// stopElements - do not search below ...
+					new String[] { "CodeScheme", "CodeSchemeReference",
+							"VariableScheme", "VariableSchemeReference" },
+					// jumpElements - jump over elements
+					new String[] { "DataRelationship", "OtherMaterial", "Note",
+							"CategoryScheme", });
 		}
 	}
 
@@ -347,9 +351,10 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 						parentVersion,
 						"datacollection__DataCollection",
 						// parent sub-elements
-						new String[] { "VersionResponsibility", "VersionRationale",
-								"DataCollectionModuleName", "Label", "Description", 
-								"Covarage", "OtherMaterial", "Note", "Methodology",   
+						new String[] { "VersionResponsibility",
+								"VersionRationale", "DataCollectionModuleName",
+								"Label", "Description", "Covarage",
+								"OtherMaterial", "Note", "Methodology",
 								"CollectionEvent", "QuestionScheme",
 								"ControlConstructScheme",
 								"InterviewerInstructionScheme", "Instrument",
@@ -359,7 +364,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 								"InterviewerInstructionScheme", "Instrument",
 								"ProcessingEvent" },
 						// jump elements
-						new String[] {"CollectionEvent", "QuestionScheme"});
+						new String[] { "CollectionEvent", "QuestionScheme" });
 
 				// clean
 				ddi3Helper.quesIsNewList
@@ -386,6 +391,25 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 		@Override
 		public void run() {
 			try {
+				// yes - no for errors
+				IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+				IMarker[] markers = root.findMarkers(IMarker.TEXT, false,
+						IResource.DEPTH_ZERO);
+				for (int i = 0; i < markers.length; i++) {
+					String id = (String) markers[i]
+							.getAttribute(IMarker.SOURCE_ID);
+					if (id != null && id.equals(Activator.PLUGIN_ID)) {
+						boolean yesNo = DialogUtil.yesNoDialog(Translator
+								.trans("line.continue"), Translator
+								.trans("line.syntaxerror.importcontinue"));
+						if (!yesNo) {
+							return;
+						}
+					}
+				}
+
+				// import ddi, come on lets go ...
+				// can't wait do it now
 				createDdi3(ddi3Helper);
 			} catch (Exception e) {
 				Editor.showError(e, ID);

@@ -78,7 +78,14 @@ import org.ddialliance.ddiftp.util.log.Log;
 import org.ddialliance.ddiftp.util.log.LogFactory;
 import org.ddialliance.ddiftp.util.log.LogType;
 import org.ddialliance.ddiftp.util.xml.XmlBeansUtil;
-import org.eclipse.ui.PlatformUI;
+import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
+
+import dk.dda.ddieditor.line.osgi.Activator;
+import dk.dda.ddieditor.line.view.TypeMarkerField;
 
 public class Ddi3Helper {
 	static private Log log = LogFactory
@@ -186,7 +193,7 @@ public class Ddi3Helper {
 			setText(mainSeq.addNewLabel(), "Main sequence");
 			addIdAndVersion(mainSeq, ElementType.SEQUENCE.getIdPrefix(), null);
 		}
-		
+
 		// variables
 		variabledao = new VariableDao();
 	}
@@ -206,7 +213,7 @@ public class Ddi3Helper {
 			setText(result.addNewHumanReadable(), description);
 		univ = result;
 	}
-	
+
 	/**
 	 * Get Value Representation of Variable.
 	 * 
@@ -218,7 +225,7 @@ public class Ddi3Helper {
 	private CustomType getValueRepresentation(String pseudoVariRef)
 			throws DDIFtpException {
 		CustomType result = null;
-		
+
 		String id = "";
 		boolean variFound = false;
 		// for all light variable elements
@@ -343,17 +350,9 @@ public class Ddi3Helper {
 
 		CustomType customType = getValueRepresentation(pseudoVariableId);
 		if (customType == null) {
-			DialogUtil.errorDialog(PlatformUI.getWorkbench().getDisplay()
-					.getActiveShell(), "test", Translator
-					.trans("line.errortitle"), Translator.trans(
+			handleParseError(ElementType.CATEGORY, Translator.trans(
 					"line.error.valueRepresentationnotfound",
-					new Object[] { pseudoVariableId }), new Throwable());
-			boolean yesNo = DialogUtil.yesNoDialog(Translator
-					.trans("line.continue"), Translator
-					.trans("line.valueRepresentationnotfound.continue"));
-			if (!yesNo) {
-				return;
-			}
+					new Object[] { pseudoVariableId }));
 		} else {
 			if (customType.getOption() != null
 					&& customType.getOption().equals("NumericTypeCodeType")) {
@@ -510,10 +509,12 @@ public class Ddi3Helper {
 		// assign category reference to code of code scheme
 		// get id of code scheme
 		if (quei == null) { // question item guard
-			throw new DDIFtpException(
-					"The Category is not specified in the context of a Question Item. \n"
-							+ "Category text is: " + text, new Throwable());
+			handleParseError(ElementType.CATEGORY,
+					Translator.trans("line.error.noqueitocategory", text));
+			return;
 		}
+
+		// identification
 		UserIDType userId = null;
 		for (UserIDType userIdTmp : quei.getUserIDList()) {
 			if (userIdTmp.getType().equals(
@@ -522,17 +523,29 @@ public class Ddi3Helper {
 				break;
 			}
 		}
+		String idStr = "";
+		if (!quei.getQuestionItemNameList().isEmpty()) {
+			idStr = ((NameType) XmlBeansUtil.getDefaultLangElement(quei
+					.getQuestionItemNameList())).getStringValue();
+		} else {
+			idStr = quei.getId();
+		}
+
 		CustomType customType = getValueRepresentation(userId.getStringValue());
 		if (customType == null || customType.getValue() == null) {
-			throw new DDIFtpException(
-					"Category specified for non-coded variable: "
-							+ userId.getStringValue());
+			handleParseError(
+					ElementType.CATEGORY,
+					Translator.trans("line.error.noncodevari", new Object[] {
+							text, userId.getStringValue(), idStr }));
+			return;
 		}
 		String id = XmlBeansUtil.getTextOnMixedElement(customType);
 		if (id.equals("")) {
-			throw new DDIFtpException(
-					"Category specified for non-coded variable: "
-							+ userId.getStringValue());
+			handleParseError(
+					ElementType.CATEGORY,
+					Translator.trans("line.error.noncodevari", new Object[] {
+							text, userId.getStringValue(), idStr }));
+			return;
 		}
 		// get code scheme
 		LightXmlObjectListDocument list = null;
@@ -542,10 +555,10 @@ public class Ddi3Helper {
 					null);
 			if (list == null
 					|| list.getLightXmlObjectList().sizeOfLightXmlObjectArray() != 1) {
-				throw new DDIFtpException(
-						"Unexpected numbers of Code Scheme found: "
-								+ list.getLightXmlObjectList()
-										.sizeOfLightXmlObjectArray());
+				handleParseError(ElementType.CATEGORY, Translator.trans(
+						"line.error.codscatUnexpect", new Object[] { text,
+								userId.getStringValue(), idStr }));
+				return;
 			}
 			String version = XmlBeansUtil.getXmlAttributeValue(list
 					.getLightXmlObjectList().xmlText(), "version=\"");
@@ -564,16 +577,10 @@ public class Ddi3Helper {
 			codes.get(catIndex).addNewCategoryReference().addNewID()
 					.setStringValue(cat.getId());
 		} catch (IndexOutOfBoundsException e) {
-			String idStr = "";
-			if (!quei.getQuestionItemNameList().isEmpty()) {
-				idStr = ((NameType) XmlBeansUtil.getDefaultLangElement(quei
-						.getQuestionItemNameList())).getStringValue();
-			} else
-				idStr = quei.getId();
-			throw new DDIFtpException(
-					Translator.trans("line.error.nocodetocategory"),
-					new Object[] { text, idStr, userId.getStringValue() },
-					new Throwable());
+			handleParseError(ElementType.CATEGORY, Translator.trans(
+					"line.error.nocodetocategory", new Object[] { text, idStr,
+							userId.getStringValue() }));
+			return;
 		}
 		codeSchemedao.update(codeScheme);
 	}
@@ -677,7 +684,7 @@ public class Ddi3Helper {
 		model.setCreate(true);
 		return model;
 	}
-	
+
 	private Variable getVariable(String id, String version, String parentId,
 			String parentVersion) throws Exception {
 
@@ -708,13 +715,19 @@ public class Ddi3Helper {
 				// get pseudo variable ID
 				if (cusList.getType().equals(VARI_NAME)) {
 					for (CustomType cusQueiRef : cusList.getCustomList()) {
-						pseudoVariableId = XmlBeansUtil.getTextOnMixedElement(cusQueiRef);
-						if (pseudoVariableId.substring(1).equals(pseudoVariRef.substring(1))) {
+						pseudoVariableId = XmlBeansUtil
+								.getTextOnMixedElement(cusQueiRef);
+						if (pseudoVariableId.substring(1).equals(
+								pseudoVariRef.substring(1))) {
 							variFound = true;
 							variableId = vari.getId();
-							variableVersion = XmlBeansUtil.getXmlAttributeValue(vari.xmlText(), "version=\"");
-							parentId = XmlBeansUtil.getXmlAttributeValue(vari.xmlText(), "parentId=\"");
-							parentVersion = XmlBeansUtil.getXmlAttributeValue(vari.xmlText(), "parentVersion=\"");
+							variableVersion = XmlBeansUtil
+									.getXmlAttributeValue(vari.xmlText(),
+											"version=\"");
+							parentId = XmlBeansUtil.getXmlAttributeValue(
+									vari.xmlText(), "parentId=\"");
+							parentVersion = XmlBeansUtil.getXmlAttributeValue(
+									vari.xmlText(), "parentVersion=\"");
 							continue;
 						}
 					}
@@ -729,10 +742,10 @@ public class Ddi3Helper {
 		}
 		// get variable and assign universe reference
 		setUniverseRefOnVariable(
-				getVariable(variableId, variableVersion, parentId, parentVersion),
-				univerId);
+				getVariable(variableId, variableVersion, parentId,
+						parentVersion), univerId);
 	}
-	
+
 	public void createIfThenElse(String queiRef, String condition, String then,
 			String elze, String statementText) throws Exception {
 		// universe
@@ -1027,7 +1040,7 @@ public class Ddi3Helper {
 
 	private List<LightXmlObjectType> getVariablesLight() throws DDIFtpException {
 		if (vars == null) {
-            vars = new ArrayList<LightXmlObjectType>();
+			vars = new ArrayList<LightXmlObjectType>();
 			try {
 				vars = DdiManager.getInstance()
 						.getVariablesLightPlus(null, null, null, null)
@@ -1180,6 +1193,53 @@ public class Ddi3Helper {
 		return noteList;
 	}
 
+	public void unsetMultipleQuestion() {
+		mque = false;
+	}
+
+	int lineNo = 0;
+
+	public int getLineNo() {
+		return lineNo;
+	}
+
+	public void setLineNo(int lineNo) {
+		this.lineNo = lineNo;
+	}
+
+	public void handleParseError(ElementType elementType, String msg)
+			throws DDIFtpException {
+		// add to ques import prob view
+		try {
+			IWorkspace workspace = ResourcesPlugin.getWorkspace();
+			IResource resource = workspace.getRoot();
+
+			IMarker marker = (IMarker) resource.createMarker(IMarker.TEXT);
+			marker.setAttribute(IMarker.LOCATION, lineNo);
+			marker.setAttribute(IMarker.MESSAGE, msg);
+			marker.setAttribute(IMarker.SOURCE_ID, Activator.PLUGIN_ID);
+			if (elementType != null) {
+				marker.setAttribute(TypeMarkerField.DDI_TYPE,
+						elementType.getElementName());
+			}
+		} catch (CoreException e) {
+			throw new DDIFtpException(e.getMessage(), e);
+		}
+
+		// display warning
+		StringBuilder msgTxt = new StringBuilder(msg);
+		msgTxt.append("\n\n");
+		msgTxt.append(Translator
+				.trans("line.valueRepresentationnotfound.continue"));
+
+		boolean yesNo = DialogUtil.yesNoDialog(
+				Translator.trans("line.continue"), msgTxt.toString());
+		if (!yesNo) {
+			throw new DDIFtpException("Import stopped",
+					new InterruptedException());
+		}
+	}
+
 	public void resultToString() {
 		log.debug("Universes:");
 		listToString(unisList);
@@ -1201,9 +1261,5 @@ public class Ddi3Helper {
 		for (Object doc : list) {
 			log.debug(((XmlObject) doc).xmlText(xmlOptions));
 		}
-	}
-
-	public void unsetMultipleQuestion() {
-		mque = false;
 	}
 }
