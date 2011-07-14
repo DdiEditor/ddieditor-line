@@ -71,6 +71,7 @@ import org.ddialliance.ddieditor.ui.model.code.CodeScheme;
 import org.ddialliance.ddieditor.ui.model.instrument.ComputationItem;
 import org.ddialliance.ddieditor.ui.model.instrument.IfThenElse;
 import org.ddialliance.ddieditor.ui.model.variable.Variable;
+import org.ddialliance.ddieditor.ui.preference.PreferenceUtil;
 import org.ddialliance.ddieditor.ui.util.DialogUtil;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
@@ -133,8 +134,7 @@ public class Ddi3Helper {
 	int LABEL_LENGTH = 35;
 	String labelPostFix = " ...";
 
-	// TODO change this later please !!!
-	String agency = ElementType.getAgency();
+	String agency = PreferenceUtil.getDdiAgency();
 
 	public Ddi3Helper() throws DDIFtpException {
 		xmlOptions.setSaveAggressiveNamespaces();
