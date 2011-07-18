@@ -102,6 +102,7 @@ public class Ddi3Helper {
 	List<QuestionSchemeDocument> quesList = new ArrayList<QuestionSchemeDocument>();
 	List<CategorySchemeDocument> catsList = new ArrayList<CategorySchemeDocument>();
 	int catIndex;
+	CodeScheme cods = null;
 	List<ControlConstructSchemeDocument> cocsList = new ArrayList<ControlConstructSchemeDocument>();
 	List<MultipleQuestionItemDocument> mqueList = new ArrayList<MultipleQuestionItemDocument>();
 	Map<String, LightXmlObjectType> mqueToQuesMap = new HashMap<String, LightXmlObjectType>();
@@ -293,8 +294,9 @@ public class Ddi3Helper {
 
 	public void createQuestion(String pseudoVariableId, String text)
 			throws DDIFtpException {
-		// reset category scheme
-		cats = null;
+		if (cats != null && cods != null) {
+			verifyCodeSchmeCategorySchemeSizes(); // TODO mque probem
+		}
 
 		QuestionItemType result = null;
 		if (mque) {
@@ -492,99 +494,6 @@ public class Ddi3Helper {
 		return mqueToQuesMap;
 	}
 
-	public void createCategory(String text) throws DDIFtpException {
-		// create category scheme - if not already done
-		if (cats == null) {
-			createCategoryScheme();
-			catIndex = 0;
-		} else {
-			catIndex++;
-		}
-
-		// create category
-		CategoryType cat = cats.getCategoryScheme().addNewCategory();
-		addIdAndVersion(cat, ElementType.CATEGORY.getIdPrefix(), null);
-		setText(cat.addNewLabel(), text);
-
-		// assign category reference to code of code scheme
-		// get id of code scheme
-		if (quei == null) { // question item guard
-			handleParseError(ElementType.CATEGORY,
-					Translator.trans("line.error.noqueitocategory", text));
-			return;
-		}
-
-		// identification
-		UserIDType userId = null;
-		for (UserIDType userIdTmp : quei.getUserIDList()) {
-			if (userIdTmp.getType().equals(
-					Ddi3NamespaceHelper.QUEI_VAR_USER_ID_TYPE)) {
-				userId = userIdTmp;
-				break;
-			}
-		}
-		String idStr = "";
-		if (!quei.getQuestionItemNameList().isEmpty()) {
-			idStr = ((NameType) XmlBeansUtil.getDefaultLangElement(quei
-					.getQuestionItemNameList())).getStringValue();
-		} else {
-			idStr = quei.getId();
-		}
-
-		CustomType customType = getValueRepresentation(userId.getStringValue());
-		if (customType == null || customType.getValue() == null) {
-			handleParseError(
-					ElementType.CATEGORY,
-					Translator.trans("line.error.noncodevari", new Object[] {
-							text, userId.getStringValue(), idStr }));
-			return;
-		}
-		String id = XmlBeansUtil.getTextOnMixedElement(customType);
-		if (id.equals("")) {
-			handleParseError(
-					ElementType.CATEGORY,
-					Translator.trans("line.error.noncodevari", new Object[] {
-							text, userId.getStringValue(), idStr }));
-			return;
-		}
-		// get code scheme
-		LightXmlObjectListDocument list = null;
-		CodeScheme codeScheme = null;
-		try {
-			list = DdiManager.getInstance().getCodeSchemesLight(id, null, null,
-					null);
-			if (list == null
-					|| list.getLightXmlObjectList().sizeOfLightXmlObjectArray() != 1) {
-				handleParseError(ElementType.CATEGORY, Translator.trans(
-						"line.error.codscatUnexpect", new Object[] { text,
-								userId.getStringValue(), idStr }));
-				return;
-			}
-			String version = XmlBeansUtil.getXmlAttributeValue(list
-					.getLightXmlObjectList().xmlText(), "version=\"");
-			String parentId = XmlBeansUtil.getXmlAttributeValue(list
-					.getLightXmlObjectList().xmlText(), "parentId=\"");
-			String parentVersion = XmlBeansUtil.getXmlAttributeValue(list
-					.getLightXmlObjectList().xmlText(), "parentVersion=\"");
-			codeScheme = (CodeScheme) codeSchemedao.getModel(id, version,
-					parentId, parentVersion);
-		} catch (Exception e) {
-			throw new DDIFtpException(e.getMessage());
-		}
-		List<CodeType> codes = codeScheme.getCodes();
-
-		try {
-			codes.get(catIndex).addNewCategoryReference().addNewID()
-					.setStringValue(cat.getId());
-		} catch (IndexOutOfBoundsException e) {
-			handleParseError(ElementType.CATEGORY, Translator.trans(
-					"line.error.nocodetocategory", new Object[] { text, idStr,
-							userId.getStringValue() }));
-			return;
-		}
-		codeSchemedao.update(codeScheme);
-	}
-
 	private CategorySchemeDocument createCategoryScheme()
 			throws DDIFtpException {
 		CategorySchemeDocument catsDoc = CategorySchemeDocument.Factory
@@ -610,6 +519,140 @@ public class Ddi3Helper {
 		}
 
 		return cats;
+	}
+
+	public void createCategory(String text) throws DDIFtpException {
+		// create category scheme - if not already done
+		if (cats == null) {
+			createCategoryScheme();
+			catIndex = 0;
+		} else {
+			catIndex++;
+		}
+
+		// create category
+		CategoryType cat = cats.getCategoryScheme().addNewCategory();
+		addIdAndVersion(cat, ElementType.CATEGORY.getIdPrefix(), null);
+		setText(cat.addNewLabel(), text);
+
+		// assign category reference to code of code scheme
+		// get id of code scheme
+		if (quei == null) { // question item guard
+			handleParseError(ElementType.CATEGORY,
+					Translator.trans("line.error.noqueitocategory", text));
+			return;
+		}
+
+		// identification
+		UserIDType pseudoVariableId = getPseudoVariableId();
+
+		String queiName = getQuestionItemName();
+
+		CustomType customType = getValueRepresentation(pseudoVariableId
+				.getStringValue());
+		if (customType == null || customType.getValue() == null) {
+			handleParseError(ElementType.CATEGORY, Translator.trans(
+					"line.error.noncodevari", new Object[] { text,
+							pseudoVariableId.getStringValue(), queiName }));
+			return;
+		}
+		String codsId = XmlBeansUtil.getTextOnMixedElement(customType);
+		if (codsId.equals("")) {
+			handleParseError(ElementType.CATEGORY, Translator.trans(
+					"line.error.noncodevari", new Object[] { text,
+							pseudoVariableId.getStringValue(), queiName }));
+			return;
+		}
+
+		// get code scheme
+		LightXmlObjectListDocument list = null;
+		if (cods == null) {
+			try {
+				list = DdiManager.getInstance().getCodeSchemesLight(codsId,
+						null, null, null);
+				if (list == null
+						|| list.getLightXmlObjectList()
+								.sizeOfLightXmlObjectArray() != 1) {
+					handleParseError(ElementType.CATEGORY,
+							Translator.trans(
+									"line.error.codscatUnexpect",
+									new Object[] { text,
+											pseudoVariableId.getStringValue(),
+											queiName }));
+					return;
+				}
+				String version = XmlBeansUtil.getXmlAttributeValue(list
+						.getLightXmlObjectList().xmlText(), "version=\"");
+				String parentId = XmlBeansUtil.getXmlAttributeValue(list
+						.getLightXmlObjectList().xmlText(), "parentId=\"");
+				String parentVersion = XmlBeansUtil.getXmlAttributeValue(list
+						.getLightXmlObjectList().xmlText(), "parentVersion=\"");
+				cods = (CodeScheme) codeSchemedao.getModel(codsId, version,
+						parentId, parentVersion);
+			} catch (Exception e) {
+				throw new DDIFtpException(e.getMessage());
+			}
+		}
+
+		// add category
+		try {
+			cods.getCodes().get(catIndex).addNewCategoryReference().addNewID()
+					.setStringValue(cat.getId());
+		} catch (IndexOutOfBoundsException e) {
+			handleParseError(ElementType.CATEGORY, Translator.trans(
+					"line.error.nocodetocategory", new Object[] { text,
+							queiName, pseudoVariableId.getStringValue() }));
+			return;
+		}
+	}
+
+	private UserIDType getPseudoVariableId() {
+		UserIDType pseudoVariableId = null;
+		for (UserIDType userIdTmp : quei.getUserIDList()) {
+			if (userIdTmp.getType().equals(
+					Ddi3NamespaceHelper.QUEI_VAR_USER_ID_TYPE)) {
+				pseudoVariableId = userIdTmp;
+				return pseudoVariableId;
+			}
+		}
+		return pseudoVariableId;
+	}
+
+	private String getQuestionItemName() throws DDIFtpException {
+		String queiName = "";
+		if (!quei.getQuestionItemNameList().isEmpty()) {
+			queiName = ((NameType) XmlBeansUtil.getDefaultLangElement(quei
+					.getQuestionItemNameList())).getStringValue();
+		} else {
+			queiName = quei.getId();
+		}
+
+		return queiName;
+	}
+
+	private void verifyCodeSchmeCategorySchemeSizes() throws DDIFtpException {
+		// check size of cats and cods
+		if (cats.getCategoryScheme().getCategoryList().size() != cods
+				.getDocument().getCodeScheme().getCodeList().size()) {
+			UserIDType pVariId = getPseudoVariableId();
+			String queiLabel = getQuestionItemName();
+			handleParseError(ElementType.CATEGORY, Translator.trans(
+					"line.error.categoriesmissing", new Object[] {
+							pVariId == null ? "" : pVariId.getStringValue(),
+							queiLabel == null ? "" : queiLabel,
+							cods.getDocument().getCodeScheme().getCodeList()
+									.size()
+									+ "",
+							cats.getCategoryScheme().getCategoryList().size()
+									+ "" }));
+		}
+
+		// cods update
+		codeSchemedao.update(cods);
+
+		// reset
+		cats = null;
+		cods = null;
 	}
 
 	public void createStatementItem(String statementText) throws Exception {
@@ -969,6 +1012,12 @@ public class Ddi3Helper {
 	 * @throws DDIFtpException
 	 */
 	public void postResolve() throws Exception {
+		// check cats and cods
+		if (cats != null && cods != null) {
+			verifyCodeSchmeCategorySchemeSizes();
+		}
+
+		// post resolve refs
 		postResolveReferences();
 		for (CategorySchemeDocument cats : catsList) {
 			postResolveCategorySchemeLabels(cats);
