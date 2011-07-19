@@ -340,7 +340,7 @@ class WikiPage extends WizardPage {
 		Group group = editor.createGroup(parent,
 				Translator.trans("line.dialog.group"));
 
-		// line.file
+		// line.filecreateIfThenElse
 		editor.createLabel(group, Translator.trans("line.filechooser.title"));
 		final Text pathText = editor.createText(group, "", false);
 		Button pathBrowse = editor.createButton(group,

@@ -81,15 +81,15 @@ public class Wiki2Ddi3Scanner {
 
 	Pattern variNamePattern = Pattern.compile("[vV][1-9]+[0-9]*");
 
-	Pattern univPattern = Pattern.compile("[=]{1}.+[=]{1}");
-	Pattern quesPattern = Pattern.compile("[=]{2}.+[=]{2}");
-	Pattern queiPattern = Pattern.compile("\\*+ ?[vV][1-9]++");
-	Pattern mquePattern = Pattern.compile(" ?'{3}.+'{3}");
-	Pattern catePattern = Pattern.compile("\\*+ ?");
+	Pattern univPattern = Pattern.compile("^[=]{1}.+[=]{1}");
+	Pattern quesPattern = Pattern.compile("^[=]{2}.+[=]{2}");
+	Pattern queiPattern = Pattern.compile("^\\*+ ?[vV][1-9]++");
+	Pattern mquePattern = Pattern.compile("^'{3}.+'{3}");
+	Pattern catePattern = Pattern.compile("^\\*{2} ?");
 
-	String compMatch = "'''''comp'''''";
-	String stateMatch = "'''''state'''''";
-	String ifThenElseMatch = "'''''ifthenelse'''''";
+	String compMatch = "''comp''";
+	String stateMatch = "''state''";
+	String ifThenElseMatch = "''ifthenelse''";
 
 	public List<String> errorList = new ArrayList<String>();
 
@@ -113,23 +113,23 @@ public class Wiki2Ddi3Scanner {
 			}
 		}
 
-		if (difineLine(line, quesPattern)) {
+		if (defineLine(line, quesPattern)) {
 			if (create) {
 				createQuestionScheme(line);
 			}
 			return;
 		}
-		if (difineLine(line, univPattern)) {
+		if (defineLine(line, univPattern)) {
 			if (create)
 				createUniverse(line);
 			return;
 		}
-		if (difineLine(line, queiPattern)) {
+		if (defineLine(line, queiPattern)) {
 			if (create)
 				createQuestion(line);
 			return;
 		}
-		if (difineLine(line, catePattern)) {
+		if (defineLine(line, catePattern)) {
 			if (create)
 				createCategory(line);
 			return;
@@ -149,7 +149,7 @@ public class Wiki2Ddi3Scanner {
 				createStatementItem(line);
 			return;
 		}
-		if (difineLine(line, mquePattern)) {
+		if (defineLine(line, mquePattern)) {
 			if (create)
 				createMultipleQuestion(line);
 			return;
@@ -164,7 +164,7 @@ public class Wiki2Ddi3Scanner {
 		return;
 	}
 
-	private boolean difineLine(String line, Pattern pattern) {
+	private boolean defineLine(String line, Pattern pattern) {
 		return pattern.matcher(line).find();
 	}
 
@@ -281,40 +281,43 @@ public class Wiki2Ddi3Scanner {
 	 * </ul>
 	 * 
 	 * @param line
-	 *            of '''''ifthenelse''''' >2 v6 v2 How many times a day?
+	 *            of '''''ifthenelse''''' v1>2||V1==10&&V2==10 v6 v2 How many times a day?
 	 * @throws Exception
 	 */
 	private void createIfThenElse(String line, boolean create) throws Exception {
 		String params[] = line.split(" ");
 		try {
-			// statement
+			// Concatenate statement elements
 			StringBuilder text = new StringBuilder();
-			for (int i = 5; i < params.length; i++) {
+			for (int i = 4; i < params.length; i++) {
 				text.append(params[i]);
 				text.append(" ");
 			}
 
-			// ref vaiable
+			// ref variable
 
 			// condition
-			// params[2];
+			Pattern conditionPattern = Pattern.compile("^[vV][1-9]+[0-9]*>|>=|<|=<|==[0-9]*.");
+			if (!defineLine(params[1], conditionPattern)) {
+				ddi3Helper.handleParseError(ElementType.IF_THEN_ELSE,
+						Translator.trans("line.parse.errorifthenelse.condition", line));
+			}
 
 			// then
-			if (variNamePattern.matcher(params[3]).find()) {
-				params[3] = "v" + params[3].substring(1);
+			if (variNamePattern.matcher(params[2]).find()) {
+				params[2] = "V" + params[2].substring(1);
 			}
 
 			// else
-			// params[4]
-			if (params[4].equals("na")) {
-				params[4] = null;
-			} else if (variNamePattern.matcher(params[4]).find()) {
-				params[4] = "v" + params[4].substring(1);
+			if (params[3].equals("na")) {
+				params[3] = null;
+			} else if (variNamePattern.matcher(params[3]).find()) {
+				params[3] = "V" + params[3].substring(1);
 			}
 
 			if (create) {
 				ddi3Helper.createIfThenElse(params[1], params[2], params[3],
-						params[4], text.toString().trim());
+						text.toString().trim());
 			}
 		} catch (Exception e) {
 			ddi3Helper.handleParseError(ElementType.IF_THEN_ELSE,
