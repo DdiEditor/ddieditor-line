@@ -221,11 +221,14 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					quesLight.getId(),
 					quesLight.getVersion(),
 					"QuestionScheme",
+					// parent sub-elements
 					new String[] { "UserID", "VersionResponsibility",
 							"VersionRationale", "QuestionSchemeName", "Label",
 							"Description", "QuestionSchemeReference" },
-					new String[] {},
-					new String[] { "QuestionItem", "MultipleQuestionItem" });
+					// stop elements
+					new String[] { "QuestionItem" },
+					// jump elements
+					new String[] { "MultipleQuestionItem" });
 		}
 
 		// control construct
