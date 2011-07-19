@@ -7,6 +7,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
@@ -789,7 +791,9 @@ public class Ddi3Helper {
 						parentVersion), univerId);
 	}
 
-	public void createIfThenElse(String queiRef, String condition, String then,
+//	public void createIfThenElse(String queiRef, String condition, String then,
+//			String elze, String statementText) throws Exception {
+	public void createIfThenElse(String condition, String then,
 			String elze, String statementText) throws Exception {
 		// universe
 		UniverseType prevUniv = univ;
@@ -840,13 +844,15 @@ public class Ddi3Helper {
 		model.setCreate(true);
 
 		// ProgrammingLanguageCodeType
-		condition = "value " + condition;
 		model.applyChange(condition, ProgrammingLanguageCodeType.class);
 		// ProgrammingLanguageCodeType/@programmingLanguage
 		model.applyChange(agency, ModelIdentifingType.Type_A.class);
 
-		// question reference
-		model.applyChange(createLightXmlObject(null, null, queiRef, null),
+		// question reference(s)
+		String params[] = condition.split("\\|\\|");
+		List <String> queiRef = new ArrayList<String>();
+		queiRef.add(condition);
+		model.applyChange(createLightXmlObject(null, null, queiRef.get(0), null),
 				ModelIdentifingType.Type_B.class);
 
 		// then reference
@@ -1045,7 +1051,7 @@ public class Ddi3Helper {
 				// elze
 				if (xml.getElseConstructReference() != null) {
 					changeCcReference(xml.getElseConstructReference());
-				}
+				} 	
 				// if source question ref
 				if (!xml.getIfCondition().getSourceQuestionReferenceList()
 						.isEmpty()) {
@@ -1194,20 +1200,40 @@ public class Ddi3Helper {
 		} else {
 			id = reference.getIDList().get(0);
 		}
+		
+		// reference contains a logical expression - extract IDs and remove duplicates
+		String varIds[] = XmlBeansUtil.getTextOnMixedElement(id).split("\\|\\|");
+		HashMap<String, String> varIDs = new HashMap<String, String>();
+		for (int i = 0; i < varIds.length; i++) {
+			String varId[] = varIds[i].split(">|>=|<|=<|==");
+			if (varId.length == 2) {
+				varIDs.put(varId[0], varId[0]);
+			}
+		}
+		Iterator<Entry<String, String>> ids = varIDs.entrySet().iterator();
+		while(ids.hasNext()) {
+			boolean found = false;
+			String userIDRef = ids.next().getValue().substring(1);
+			// search in all Question Schemes
+			for (QuestionSchemeDocument ques : quesList) {
+				// amount all Question Items
+				for (QuestionItemType quei : ques.getQuestionScheme()
+						.getQuestionItemList()) {
 
-		for (QuestionSchemeDocument ques : quesList) {
-			for (QuestionItemType quei : ques.getQuestionScheme()
-					.getQuestionItemList()) {
-
-				if (!quei.getUserIDList().isEmpty()
-						&& quei.getUserIDArray(0).getStringValue().substring(1)
-								.equals(id.getStringValue().substring(1))) {
-					ModelAccessor.setReference(
-							reference,
-							createLightXmlObject(ques.getQuestionScheme()
-									.getId(), ques.getQuestionScheme()
-									.getVersion(), quei.getId(), quei
-									.getVersion()));
+					if (!quei.getUserIDList().isEmpty()
+							&& quei.getUserIDArray(0).getStringValue().substring(1)
+									.equals(userIDRef)) {
+						ModelAccessor.setReference(
+								reference,
+								createLightXmlObject(ques.getQuestionScheme()
+										.getId(), ques.getQuestionScheme()
+										.getVersion(), quei.getId(), quei
+										.getVersion()));
+						found = true;
+						break;
+					}
+				}
+				if (found) {
 					break;
 				}
 			}
