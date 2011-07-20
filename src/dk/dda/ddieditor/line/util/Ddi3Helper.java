@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.impl.values.XmlUnionImpl;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptType;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.UniverseSchemeDocument;
@@ -790,9 +791,21 @@ public class Ddi3Helper {
 				getVariable(variableId, variableVersion, parentId,
 						parentVersion), univerId);
 	}
+	
+	// Extract unique variable names from conditions
+	private String[] extractUniqueIDs(String expression) {
+		// reference contains a logical expression - extract IDs and remove duplicates
+		String varIds[] = expression.split("\\|\\||&&");
+		HashMap<String, String> varIDs = new HashMap<String, String>();
+		for (int i = 0; i < varIds.length; i++) {
+			String varId[] = varIds[i].split(">|>=|<|=<|==");
+			if (varId.length == 2) {
+				varIDs.put(varId[0], varId[0]);
+			}
+		}
+		return varIDs.keySet().toArray(new String[varIDs.size()]);
+	}
 
-//	public void createIfThenElse(String queiRef, String condition, String then,
-//			String elze, String statementText) throws Exception {
 	public void createIfThenElse(String condition, String then,
 			String elze, String statementText) throws Exception {
 		// universe
@@ -849,11 +862,12 @@ public class Ddi3Helper {
 		model.applyChange(agency, ModelIdentifingType.Type_A.class);
 
 		// question reference(s)
-		String params[] = condition.split("\\|\\|");
-		List <String> queiRef = new ArrayList<String>();
-		queiRef.add(condition);
-		model.applyChange(createLightXmlObject(null, null, queiRef.get(0), null),
-				ModelIdentifingType.Type_B.class);
+		String[] varIDs = extractUniqueIDs(condition);
+		for (int i = 0; i < varIDs.length; i++) {
+			model.applyChange(
+					createLightXmlObject(null, null, varIDs[i], null),
+					ModelIdentifingType.Type_B.class);
+		}
 
 		// then reference
 		model.applyChange(
@@ -1055,8 +1069,10 @@ public class Ddi3Helper {
 				// if source question ref
 				if (!xml.getIfCondition().getSourceQuestionReferenceList()
 						.isEmpty()) {
-					postResolveQueiReference(xml.getIfCondition()
-							.getSourceQuestionReferenceArray(0));
+					List<ReferenceType> sourceQReferenceTypes = xml.getIfCondition().getSourceQuestionReferenceList();
+					for (int i = 0; i < sourceQReferenceTypes.size(); i++) {
+						postResolveQueiReference(sourceQReferenceTypes.get(i));
+					}
 				}
 			}
 			// computation item
@@ -1194,46 +1210,25 @@ public class Ddi3Helper {
 	}
 
 	private void postResolveQueiReference(ReferenceType reference) {
-		IDType id = null;
-		if (reference.getIDList().isEmpty()) {
-			return;
-		} else {
-			id = reference.getIDList().get(0);
-		}
-		
-		// reference contains a logical expression - extract IDs and remove duplicates
-		String varIds[] = XmlBeansUtil.getTextOnMixedElement(id).split("\\|\\|");
-		HashMap<String, String> varIDs = new HashMap<String, String>();
-		for (int i = 0; i < varIds.length; i++) {
-			String varId[] = varIds[i].split(">|>=|<|=<|==");
-			if (varId.length == 2) {
-				varIDs.put(varId[0], varId[0]);
-			}
-		}
-		Iterator<Entry<String, String>> ids = varIDs.entrySet().iterator();
-		while(ids.hasNext()) {
-			boolean found = false;
-			String userIDRef = ids.next().getValue().substring(1);
-			// search in all Question Schemes
-			for (QuestionSchemeDocument ques : quesList) {
-				// amount all Question Items
-				for (QuestionItemType quei : ques.getQuestionScheme()
-						.getQuestionItemList()) {
+		String id = XmlBeansUtil.getTextOnMixedElement(reference);
 
-					if (!quei.getUserIDList().isEmpty()
-							&& quei.getUserIDArray(0).getStringValue().substring(1)
-									.equals(userIDRef)) {
-						ModelAccessor.setReference(
-								reference,
-								createLightXmlObject(ques.getQuestionScheme()
-										.getId(), ques.getQuestionScheme()
-										.getVersion(), quei.getId(), quei
-										.getVersion()));
-						found = true;
-						break;
-					}
-				}
-				if (found) {
+		// resolve reference
+		// search in all Question Schemes
+		for (QuestionSchemeDocument ques : quesList) {
+			// amount all Question Items
+			for (QuestionItemType quei : ques.getQuestionScheme()
+					.getQuestionItemList()) {
+
+				if (!quei.getUserIDList().isEmpty()
+						&& quei.getUserIDArray(0).getStringValue().substring(1)
+								.equals(id.substring(1))) {
+					ModelAccessor.setReference(
+							reference,
+							createLightXmlObject(ques.getQuestionScheme()
+									.getId(), ques.getQuestionScheme()
+									.getVersion(), quei.getId(), quei
+									.getVersion()));
+
 					break;
 				}
 			}
