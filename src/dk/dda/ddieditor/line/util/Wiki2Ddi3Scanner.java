@@ -86,6 +86,8 @@ public class Wiki2Ddi3Scanner {
 	Pattern queiPattern = Pattern.compile("^\\*+ ?[vV][1-9]++");
 	Pattern mquePattern = Pattern.compile("^'{3}.+'{3}");
 	Pattern catePattern = Pattern.compile("^\\*{2} ?");
+	Pattern conditionPattern = Pattern
+			.compile("^([vV][1-9]+[0-9]*(>{1}|>=|<{1}|<=|={2})[0-9]*([&{2}]*|[|{2}])*)+");
 
 	String compMatch = "''comp''";
 	String stateMatch = "''state''";
@@ -166,6 +168,11 @@ public class Wiki2Ddi3Scanner {
 
 	private boolean defineLine(String line, Pattern pattern) {
 		return pattern.matcher(line).find();
+	}
+
+	protected boolean validateExpression(String expression, Pattern pattern) {
+		Matcher matcher = pattern.matcher(expression);
+		return matcher.matches();
 	}
 
 	/**
@@ -281,7 +288,8 @@ public class Wiki2Ddi3Scanner {
 	 * </ul>
 	 * 
 	 * @param line
-	 *            of '''''ifthenelse''''' v1>2||V1==10&&V2==10 v6 v2 How many times a day?
+	 *            of '''''ifthenelse''''' v1>2||V1==10&&V2==10 v6 v2 How many
+	 *            times a day?
 	 * @throws Exception
 	 */
 	private void createIfThenElse(String line, boolean create) throws Exception {
@@ -294,13 +302,11 @@ public class Wiki2Ddi3Scanner {
 				text.append(" ");
 			}
 
-			// ref variable
-
-			// condition
-			Pattern conditionPattern = Pattern.compile("^[vV][1-9]+[0-9]*>|>=|<|=<|==[0-9]*.");
-			if (!defineLine(params[1], conditionPattern)) {
+			// if condition
+			if (!validateExpression(params[1], conditionPattern)) {
 				ddi3Helper.handleParseError(ElementType.IF_THEN_ELSE,
-						Translator.trans("line.parse.errorifthenelse.condition", line));
+						Translator.trans(
+								"line.parse.errorifthenelse.condition", line));
 			}
 
 			// then
@@ -320,8 +326,9 @@ public class Wiki2Ddi3Scanner {
 						text.toString().trim());
 			}
 		} catch (Exception e) {
-			ddi3Helper.handleParseError(ElementType.IF_THEN_ELSE,
-					Translator.trans("line.parse.errorifthenelse", line));
+			ddi3Helper.handleParseError(ElementType.IF_THEN_ELSE, Translator
+					.trans("line.parse.errorifthenelse",
+							new Object[] { line, e.getMessage() }));
 		}
 	}
 
