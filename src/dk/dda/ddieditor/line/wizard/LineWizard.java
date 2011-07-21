@@ -28,6 +28,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.events.TraverseEvent;
@@ -51,7 +53,7 @@ import dk.dda.ddieditor.line.util.Ddi3Helper;
 import dk.dda.ddieditor.line.util.Wiki2Ddi3Scanner;
 
 public class LineWizard extends Wizard {
-	Ddi3Helper ddi3Helper;
+	static Ddi3Helper ddi3Helper;
 
 	public LineWizard(Ddi3Helper ddi3Helper) {
 		super();
@@ -251,7 +253,7 @@ public class LineWizard extends Wizard {
 	public static void displayWiki(String wikiSyntax, Browser browser,
 			boolean validateSyntax) {
 		if (validateSyntax) {
-			Wiki2Ddi3Scanner scanner = new Wiki2Ddi3Scanner();
+			Wiki2Ddi3Scanner scanner = new Wiki2Ddi3Scanner(ddi3Helper);
 			try {
 				scanner.startScanning(wikiSyntax, false);
 			} catch (Exception e) {
@@ -353,6 +355,7 @@ class WikiPage extends WizardPage {
 		pathText.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyReleased(KeyEvent e) {
+				System.out.println("Key");
 				// on a CR - read and display file:
 				if (e.keyCode == SWT.CR) {
 					readAndDisplayFile(pathText.getText(), browser);
@@ -363,6 +366,7 @@ class WikiPage extends WizardPage {
 		});
 		pathText.addTraverseListener(new TraverseListener() {
 			public void keyTraversed(TraverseEvent e) {
+				System.out.println("Browser: "+browser);
 				switch (e.detail) {
 				case SWT.TRAVERSE_TAB_NEXT:
 				case SWT.TRAVERSE_TAB_PREVIOUS: {
