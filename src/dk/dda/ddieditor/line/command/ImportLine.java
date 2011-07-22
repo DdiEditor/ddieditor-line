@@ -408,6 +408,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 						if (!yesNo) {
 							return;
 						}
+						break;
 					}
 				}
 
