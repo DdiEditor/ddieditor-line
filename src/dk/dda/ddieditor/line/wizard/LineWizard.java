@@ -270,11 +270,10 @@ public class LineWizard extends Wizard {
 					}
 				}
 
-				DialogUtil.errorDialog(PlatformUI.getWorkbench()
+				DialogUtil.infoDialog(PlatformUI.getWorkbench()
 						.getActiveWorkbenchWindow().getShell(),
 						Activator.PLUGIN_ID,
-						Translator.trans("line.errortitle"), result.toString(),
-						new Throwable());
+						Translator.trans("line.errortitle"), result.toString());
 			}
 		}
 
