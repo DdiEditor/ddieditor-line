@@ -100,7 +100,6 @@ public class Wiki2Ddi3Scanner {
 			log.debug(lineNo + " - " + line);
 		}
 		ddi3Helper.setLineNo(lineNo);
-		String errorStr = null;
 
 		// check for empty input
 		if (line == null || line.equals("")) {
@@ -137,8 +136,14 @@ public class Wiki2Ddi3Scanner {
 			return;
 		}
 		if (line.indexOf(ifThenElseMatch) > -1) {
-			if (create)
+			if (create) {
 				createIfThenElse(line, true);
+			} else {
+				if (!validateExpression(line.split(" ")[1], conditionPattern)) {
+					errorList.add(Translator.trans(
+							"line.parse.errorifthenelse.condition", line));
+				}
+			}
 			return;
 		}
 		if (line.indexOf(compMatch) > -1) {
@@ -156,18 +161,15 @@ public class Wiki2Ddi3Scanner {
 				createMultipleQuestion(line);
 			return;
 		}
-
-		// define error
-		if (errorStr == null) {
-			errorStr = Translator.trans("processLine.error.undefined",
-					new Object[] { lineNo + 1, line });
-		}
-		errorList.add(errorStr);
+		
+		errorList.add(Translator.trans("processLine.error.undefined",
+				new Object[] { lineNo, line }));
 		return;
 	}
 
 	private boolean defineLine(String line, Pattern pattern) {
-		return pattern.matcher(line).find();
+		Matcher matcher = pattern.matcher(line); 
+		return matcher.find();
 	}
 
 	protected boolean validateExpression(String expression, Pattern pattern) {
