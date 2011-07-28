@@ -592,11 +592,14 @@ public class Ddi3Helper {
 						.getLightXmlObjectList().xmlText(), "parentVersion=\"");
 				cods = (CodeScheme) codeSchemedao.getModel(codsId, version,
 						parentId, parentVersion);
+				cods.getDocument().getCodeScheme()
+						.addNewCategorySchemeReference().addNewID()
+						.setStringValue(cats.getCategoryScheme().getId());
 			} catch (Exception e) {
 				throw new DDIFtpException(e.getMessage());
 			}
 		}
-
+		
 		// add category
 		try {
 			cods.getCodes().get(catIndex).addNewCategoryReference().addNewID()
