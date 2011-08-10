@@ -351,7 +351,6 @@ class WikiPage extends WizardPage {
 		pathText.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyReleased(KeyEvent e) {
-				System.out.println("Key");
 				// on a CR - read and display file:
 				if (e.keyCode == SWT.CR) {
 					readAndDisplayFile(pathText.getText(), browser);
@@ -362,7 +361,6 @@ class WikiPage extends WizardPage {
 		});
 		pathText.addTraverseListener(new TraverseListener() {
 			public void keyTraversed(TraverseEvent e) {
-				System.out.println("Browser: " + browser);
 				switch (e.detail) {
 				case SWT.TRAVERSE_TAB_NEXT:
 				case SWT.TRAVERSE_TAB_PREVIOUS: {
