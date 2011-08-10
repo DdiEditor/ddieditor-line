@@ -8,7 +8,6 @@ import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
 import org.ddialliance.ddieditor.ui.editor.Editor;
 import org.ddialliance.ddieditor.ui.editor.widgetutil.referenceselection.ReferenceSelectionCombo;
-import org.ddialliance.ddieditor.ui.view.Messages;
 import org.ddialliance.ddiftp.util.Translator;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.custom.BusyIndicator;
@@ -70,11 +69,11 @@ public class ResourcePage extends WizardPage {
 					// TODO
 				}
 				uniRefSelectCombo = editor.createRefSelection(group,
-						Messages.getString("VariableEditor.label.universeref"),
-						Messages.getString("VariableEditor.label.universeref"),
+						Translator.trans("VariableEditor.label.universeref"),
+						Translator.trans("VariableEditor.label.universeref"),
 						ReferenceType.Factory.newInstance(), uniRefList, false);
 				uniRefSelectCombo.addSelectionListener(
-						Messages.getString("VariableEditor.label.universeref"),
+						Translator.trans("VariableEditor.label.universeref"),
 						null);
 
 				// create universe scheme - comment out 20110208
@@ -105,12 +104,12 @@ public class ResourcePage extends WizardPage {
 					editor.showError(e);
 				}
 				conRefSelectCombo = editor.createRefSelection(group,
-						Messages.getString("VariableEditor.label.conceptref"),
-						Messages.getString("VariableEditor.label.conceptref"),
+						Translator.trans("VariableEditor.label.conceptref"),
+						Translator.trans("VariableEditor.label.conceptref"),
 						ReferenceType.Factory.newInstance(), conceptRefList,
 						false);
 				conRefSelectCombo.addSelectionListener(
-						Messages.getString("VariableEditor.label.conceptref"),
+						Translator.trans("VariableEditor.label.conceptref"),
 						null);
 
 				// create concept scheme - comment out 20110208

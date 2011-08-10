@@ -12,7 +12,6 @@ import org.ddialliance.ddieditor.model.resource.DDIResourceType;
 import org.ddialliance.ddieditor.persistenceaccess.PersistenceManager;
 import org.ddialliance.ddieditor.ui.editor.Editor;
 import org.ddialliance.ddieditor.ui.util.DialogUtil;
-import org.ddialliance.ddieditor.ui.view.Messages;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
 import org.eclipse.core.resources.IMarker;
@@ -28,8 +27,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.events.TraverseEvent;
@@ -238,7 +235,7 @@ public class LineWizard extends Wizard {
 			scanner = new Scanner(new File(fileName), "utf-8");
 		} catch (FileNotFoundException e2) {
 			MessageDialog.openError(PlatformUI.getWorkbench().getDisplay()
-					.getActiveShell(), Messages.getString("ErrorTitle"),
+					.getActiveShell(), Translator.trans("ErrorTitle"),
 					e2.getMessage());
 		}
 		StringBuilder wikiSyntax = new StringBuilder();
@@ -365,7 +362,7 @@ class WikiPage extends WizardPage {
 		});
 		pathText.addTraverseListener(new TraverseListener() {
 			public void keyTraversed(TraverseEvent e) {
-				System.out.println("Browser: "+browser);
+				System.out.println("Browser: " + browser);
 				switch (e.detail) {
 				case SWT.TRAVERSE_TAB_NEXT:
 				case SWT.TRAVERSE_TAB_PREVIOUS: {
@@ -485,7 +482,7 @@ class ParsePage extends WizardPage {
 			resources = PersistenceManager.getInstance().getResources();
 		} catch (DDIFtpException e) {
 			MessageDialog.openError(PlatformUI.getWorkbench().getDisplay()
-					.getActiveShell(), Messages.getString("ErrorTitle"),
+					.getActiveShell(), Translator.trans("ErrorTitle"),
 					e.getMessage());
 		}
 		String[] options = new String[resources.size()];
