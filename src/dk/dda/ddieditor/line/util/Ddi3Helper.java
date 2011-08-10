@@ -599,7 +599,7 @@ public class Ddi3Helper {
 				throw new DDIFtpException(e.getMessage());
 			}
 		}
-		
+
 		// add category
 		try {
 			cods.getCodes().get(catIndex).addNewCategoryReference().addNewID()
@@ -794,10 +794,11 @@ public class Ddi3Helper {
 				getVariable(variableId, variableVersion, parentId,
 						parentVersion), univerId);
 	}
-	
+
 	// Extract unique variable names from conditions
 	private String[] extractUniqueIDs(String expression) {
-		// reference contains a logical expression - extract IDs and remove duplicates
+		// reference contains a logical expression - extract IDs and remove
+		// duplicates
 		String varIds[] = expression.split("\\|\\||&&");
 		HashMap<String, String> varIDs = new HashMap<String, String>();
 		for (int i = 0; i < varIds.length; i++) {
@@ -809,8 +810,8 @@ public class Ddi3Helper {
 		return varIDs.keySet().toArray(new String[varIDs.size()]);
 	}
 
-	public void createIfThenElse(String condition, String then,
-			String elze, String statementText) throws Exception {
+	public void createIfThenElse(String condition, String then, String elze,
+			String statementText) throws Exception {
 		// universe
 		UniverseType prevUniv = univ;
 		createUniverse(getLabelText(statementText), getLabelText(statementText));
@@ -1068,11 +1069,12 @@ public class Ddi3Helper {
 				// elze
 				if (xml.getElseConstructReference() != null) {
 					changeCcReference(xml.getElseConstructReference());
-				} 	
+				}
 				// if source question ref
 				if (!xml.getIfCondition().getSourceQuestionReferenceList()
 						.isEmpty()) {
-					List<ReferenceType> sourceQReferenceTypes = xml.getIfCondition().getSourceQuestionReferenceList();
+					List<ReferenceType> sourceQReferenceTypes = xml
+							.getIfCondition().getSourceQuestionReferenceList();
 					for (int i = 0; i < sourceQReferenceTypes.size(); i++) {
 						postResolveQueiReference(sourceQReferenceTypes.get(i));
 					}
@@ -1280,9 +1282,8 @@ public class Ddi3Helper {
 		this.lineNo = lineNo;
 	}
 
-	public void handleParseError(ElementType elementType, String msg)
+	public static void createMarker(int lineNo, String msg, String elemetName)
 			throws DDIFtpException {
-		// add to ques import prob view
 		try {
 			IWorkspace workspace = ResourcesPlugin.getWorkspace();
 			IResource resource = workspace.getRoot();
@@ -1291,13 +1292,19 @@ public class Ddi3Helper {
 			marker.setAttribute(IMarker.LOCATION, lineNo);
 			marker.setAttribute(IMarker.MESSAGE, msg);
 			marker.setAttribute(IMarker.SOURCE_ID, Activator.PLUGIN_ID);
-			if (elementType != null) {
-				marker.setAttribute(TypeMarkerField.DDI_TYPE,
-						elementType.getElementName());
+			if (elemetName != null) {
+				marker.setAttribute(TypeMarkerField.DDI_TYPE, elemetName);
 			}
 		} catch (CoreException e) {
 			throw new DDIFtpException(e.getMessage(), e);
 		}
+	}
+
+	public void handleParseError(ElementType elementType, String msg)
+			throws DDIFtpException {
+		// add to ques import prob view
+		createMarker(lineNo, msg,
+				elementType == null ? null : elementType.getElementName());
 
 		// display warning
 		StringBuilder msgTxt = new StringBuilder(msg);
