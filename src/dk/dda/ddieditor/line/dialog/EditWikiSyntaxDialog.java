@@ -7,6 +7,9 @@ import java.io.Writer;
 
 import org.ddialliance.ddieditor.ui.editor.Editor;
 import org.ddialliance.ddiftp.util.Translator;
+import org.ddialliance.ddiftp.util.log.Log;
+import org.ddialliance.ddiftp.util.log.LogFactory;
+import org.ddialliance.ddiftp.util.log.LogType;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
@@ -25,9 +28,12 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 
+import dk.dda.ddieditor.line.util.Ddi3Helper;
 import dk.dda.ddieditor.line.wizard.LineWizard;
 
 public class EditWikiSyntaxDialog extends Dialog {
+	static private Log log = LogFactory.getLog(LogType.SYSTEM, Ddi3Helper.class);
+	public static String ID = "dk.dda.ddieditor.line.dialog.EditWikiSyntaxDialog";
 	public String fileName;
 	public String result = "";
 	public String wikiSyntax;
@@ -133,7 +139,9 @@ public class EditWikiSyntaxDialog extends Dialog {
 				try {
 					File f = new File(fileName);
 					if (!f.exists()) {
-						f.createNewFile();
+						if (!f.createNewFile()) {
+							log.debug("File '"+fileName+"' overwritten");
+						};
 					}
 					Writer output = new BufferedWriter(new FileWriter(f));
 					try {
@@ -142,7 +150,7 @@ public class EditWikiSyntaxDialog extends Dialog {
 						output.close();
 					}
 				} catch (Exception e2) {
-					// TODO: handle exception
+					Editor.showError(e2, ID);
 				}
 			}
 
