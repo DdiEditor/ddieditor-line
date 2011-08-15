@@ -8,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.ddialliance.ddieditor.ui.model.ElementType;
+import org.ddialliance.ddieditor.ui.model.instrument.ConditionalUtil;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
 import org.ddialliance.ddiftp.util.log.Log;
@@ -87,7 +88,7 @@ public class Wiki2Ddi3Scanner {
 	Pattern mquePattern = Pattern.compile("^'{3}.+'{3}");
 	Pattern catePattern = Pattern.compile("^\\*{2} ?");
 	Pattern conditionPattern = Pattern
-			.compile("^([vV][1-9]+[0-9]*(>{1}|>=|<{1}|<=|={2})[0-9]*([&{2}]*|[|{2}])*)+");
+			.compile(ConditionalUtil.conditionalPattern);
 
 	String compMatch = "''comp''";
 	String stateMatch = "''state''";
