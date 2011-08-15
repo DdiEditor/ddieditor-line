@@ -72,10 +72,12 @@ import org.ddialliance.ddieditor.ui.model.ModelAccessor;
 import org.ddialliance.ddieditor.ui.model.ModelIdentifingType;
 import org.ddialliance.ddieditor.ui.model.code.CodeScheme;
 import org.ddialliance.ddieditor.ui.model.instrument.ComputationItem;
+import org.ddialliance.ddieditor.ui.model.instrument.ConditionalUtil;
 import org.ddialliance.ddieditor.ui.model.instrument.IfThenElse;
 import org.ddialliance.ddieditor.ui.model.variable.Variable;
 import org.ddialliance.ddieditor.ui.preference.PreferenceUtil;
 import org.ddialliance.ddieditor.ui.util.DialogUtil;
+import org.ddialliance.ddieditor.util.DdiEditorConfig;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
 import org.ddialliance.ddiftp.util.log.Log;
@@ -795,21 +797,6 @@ public class Ddi3Helper {
 						parentVersion), univerId);
 	}
 
-	// Extract unique variable names from conditions
-	private String[] extractUniqueIDs(String expression) {
-		// reference contains a logical expression - extract IDs and remove
-		// duplicates
-		String varIds[] = expression.split("\\|\\||&&");
-		HashMap<String, String> varIDs = new HashMap<String, String>();
-		for (int i = 0; i < varIds.length; i++) {
-			String varId[] = varIds[i].split(">|>=|<|=<|==");
-			if (varId.length == 2) {
-				varIDs.put(varId[0], varId[0]);
-			}
-		}
-		return varIDs.keySet().toArray(new String[varIDs.size()]);
-	}
-
 	public void createIfThenElse(String condition, String then, String elze,
 			String statementText) throws Exception {
 		// universe
@@ -863,10 +850,12 @@ public class Ddi3Helper {
 		// ProgrammingLanguageCodeType
 		model.applyChange(condition, ProgrammingLanguageCodeType.class);
 		// ProgrammingLanguageCodeType/@programmingLanguage
-		model.applyChange(agency, ModelIdentifingType.Type_A.class);
+		model.applyChange(DdiEditorConfig
+				.get(DdiEditorConfig.DDA_DDI_INSTRUMENT_PROGRAM_LANG),
+				ModelIdentifingType.Type_A.class);
 
 		// question reference(s)
-		String[] varIDs = extractUniqueIDs(condition);
+		String[] varIDs = ConditionalUtil.extractUniqueIDs(condition);
 		for (int i = 0; i < varIDs.length; i++) {
 			model.applyChange(
 					createLightXmlObject(null, null, varIDs[i], null),
