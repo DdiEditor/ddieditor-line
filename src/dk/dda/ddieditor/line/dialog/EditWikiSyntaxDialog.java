@@ -33,7 +33,7 @@ import dk.dda.ddieditor.line.wizard.LineWizard;
 
 public class EditWikiSyntaxDialog extends Dialog {
 	static private Log log = LogFactory.getLog(LogType.SYSTEM, Ddi3Helper.class);
-	public static String ID = "dk.dda.ddieditor.line.dialog.EditWikiSyntaxDialog";
+	public static final String ID = "dk.dda.ddieditor.line.dialog.EditWikiSyntaxDialog";
 	public String fileName;
 	public String result = "";
 	public String wikiSyntax;

@@ -77,8 +77,6 @@ public class LineWizard extends Wizard {
 		return true;
 	}
 
-	static String finishedwikiSyntax = "";
-
 	public boolean performFinish() {
 		try {
 			// clean up problem view
@@ -363,12 +361,16 @@ class WikiPage extends WizardPage {
 			public void keyTraversed(TraverseEvent e) {
 				switch (e.detail) {
 				case SWT.TRAVERSE_TAB_NEXT:
+					break;
 				case SWT.TRAVERSE_TAB_PREVIOUS: {
 					readAndDisplayFile(pathText.getText(), browser);
 					// set page complete
 					setPageComplete(true);
 					e.doit = true;
+					break;
 				}
+				default:
+					break;
 				}
 			}
 		});

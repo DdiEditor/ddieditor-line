@@ -66,7 +66,7 @@ public class ResourcePage extends WizardPage {
 							.getUniversesLight(null, null, null, null)
 							.getLightXmlObjectList().getLightXmlObjectList();
 				} catch (Exception e) {
-					// TODO
+					Editor.showError(e, this.getClass().getName());
 				}
 				uniRefSelectCombo = editor.createRefSelection(group,
 						Translator.trans("VariableEditor.label.universeref"),
