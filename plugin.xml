@@ -8,6 +8,11 @@
             id="dk.dda.ddieditor.line.command.ImportLine"
             name="ImportLine">
       </command>
+      <command
+            defaultHandler="dk.dda.ddieditor.line.command.DisplayQuestionImportTimeings"
+            id="dk.dda.ddieditor.line.command.DisplayQuestionImportTimeings"
+            name="DisplayQuestionImportTimeings">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.menus">
@@ -18,6 +23,15 @@
                commandId="dk.dda.ddieditor.line.command.ImportLine"
                icon="icons/question.png"
                label="Questions"
+               style="push">
+         </command>
+      </menuContribution>
+      <menuContribution
+            allPopups="false"
+            locationURI="menu:hlp?after=releasenote">
+         <command
+               commandId="dk.dda.ddieditor.line.command.DisplayQuestionImportTimeings"
+               label="Display Question Import Debug"
                style="push">
          </command>
       </menuContribution>
