@@ -39,13 +39,14 @@ import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.preferences.ScopedPreferenceStore;
+import org.joda.time.Period;
 
 import dk.dda.ddieditor.line.osgi.Activator;
 import dk.dda.ddieditor.line.util.Ddi3Helper;
 import dk.dda.ddieditor.line.wizard.LineWizard;
 
 public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
-	public static String ID = "dk.dda.ddieditor.line.command.ImportLine";
+	public static final String ID = "dk.dda.ddieditor.line.command.ImportLine";
 	private Log log = LogFactory.getLog(LogType.SYSTEM, ImportLine.class);
 
 	ScopedPreferenceStore preferenceStore = new ScopedPreferenceStore(
@@ -69,9 +70,10 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 
 		if (returnCode != Window.CANCEL) {
 			// import questions
-			RefreshRunnable longJob = new RefreshRunnable(ddi3Helper);
-			BusyIndicator.showWhile(PlatformUI.getWorkbench().getDisplay(),
-					longJob);
+			ImportDdiQuestionsRunnable longJob = new ImportDdiQuestionsRunnable(
+					ddi3Helper);
+			BusyIndicator.showWhile(PlatformUI.getWorkbench()
+					.getDisplay(), longJob);
 
 			// refresh views
 			ViewManager.getInstance().addAllViewsToRefresh();
@@ -382,12 +384,12 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 	}
 
 	/**
-	 * Runnable wrapping view refresh to enable RCP busy indicator
+	 * Runnable wrapping import of questions to enable RCP busy indicator
 	 */
-	class RefreshRunnable implements Runnable {
+	class ImportDdiQuestionsRunnable implements Runnable {
 		Ddi3Helper ddi3Helper;
 
-		RefreshRunnable(Ddi3Helper ddi3Helper) {
+		ImportDdiQuestionsRunnable(Ddi3Helper ddi3Helper) {
 			this.ddi3Helper = ddi3Helper;
 		}
 
@@ -412,9 +414,16 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					}
 				}
 
-				// import ddi, come on lets go ...
-				// can't wait do it now
+				// time import
+				long b = System.currentTimeMillis();
+
+				// import
 				createDdi3(ddi3Helper);
+
+				// log report
+				Period p = new Period(System.currentTimeMillis() - b);
+				log.info(p.getHours()+":"+p.getMinutes()+":"+p.getSeconds());
+				log.info(p.toString() + " - lines: " + ddi3Helper.getLineNo());
 			} catch (Exception e) {
 				Editor.showError(e, ID);
 			}
