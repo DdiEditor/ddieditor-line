@@ -11,6 +11,7 @@ import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
 import org.ddialliance.ddieditor.model.resource.DDIResourceType;
 import org.ddialliance.ddieditor.persistenceaccess.PersistenceManager;
 import org.ddialliance.ddieditor.ui.editor.Editor;
+import org.ddialliance.ddieditor.ui.preference.PreferenceUtil;
 import org.ddialliance.ddieditor.ui.util.DialogUtil;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
@@ -443,8 +444,10 @@ class PathSelectionListener implements SelectionListener {
 		fileChooser.setFilterExtensions(new String[] { "*.txt" });
 		fileChooser.setFilterNames(new String[] { Translator
 				.trans("line.filechooser.filternames") });
+		PreferenceUtil.setPathFilter(fileChooser);
 		WikiPage.fileName = fileChooser.open();
 		pathText.setText(WikiPage.fileName);
+		PreferenceUtil.setLastBrowsedPath(WikiPage.fileName);
 
 		// read in file
 		WikiPage.wikiSyntax = LineWizard.readFile(WikiPage.fileName);
