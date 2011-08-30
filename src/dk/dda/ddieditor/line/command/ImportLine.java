@@ -33,12 +33,10 @@ import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.preferences.ConfigurationScope;
 import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.preferences.ScopedPreferenceStore;
 import org.joda.time.Period;
 
 import dk.dda.ddieditor.line.osgi.Activator;
@@ -48,9 +46,6 @@ import dk.dda.ddieditor.line.wizard.LineWizard;
 public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 	public static final String ID = "dk.dda.ddieditor.line.command.ImportLine";
 	private Log log = LogFactory.getLog(LogType.SYSTEM, ImportLine.class);
-
-	ScopedPreferenceStore preferenceStore = new ScopedPreferenceStore(
-			new ConfigurationScope(), "ddieditor-ui");
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
@@ -72,6 +67,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			// import questions
 			ImportDdiQuestionsRunnable longJob = new ImportDdiQuestionsRunnable(
 					ddi3Helper);
+
 			BusyIndicator.showWhile(PlatformUI.getWorkbench().getDisplay(),
 					longJob);
 
