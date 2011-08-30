@@ -72,8 +72,8 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			// import questions
 			ImportDdiQuestionsRunnable longJob = new ImportDdiQuestionsRunnable(
 					ddi3Helper);
-			BusyIndicator.showWhile(PlatformUI.getWorkbench()
-					.getDisplay(), longJob);
+			BusyIndicator.showWhile(PlatformUI.getWorkbench().getDisplay(),
+					longJob);
 
 			// refresh views
 			ViewManager.getInstance().addAllViewsToRefresh();
@@ -331,6 +331,9 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					new String[] { "DataRelationship", "OtherMaterial", "Note",
 							"CategoryScheme", });
 		}
+
+		// persistence manager housekeeping
+		PersistenceManager.getInstance().getPersistenceStorage().houseKeeping();
 	}
 
 	private void createQuestionScheme(Ddi3Helper ddi3Helper, boolean force,
@@ -422,7 +425,6 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 
 				// log report
 				Period p = new Period(System.currentTimeMillis() - b);
-				log.info(p.getHours()+":"+p.getMinutes()+":"+p.getSeconds());
 				log.info(p.toString() + " - lines: " + ddi3Helper.getLineNo());
 			} catch (Exception e) {
 				Editor.showError(e, ID);
