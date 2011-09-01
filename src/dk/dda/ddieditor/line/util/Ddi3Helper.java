@@ -7,12 +7,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Pattern;
 
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.impl.values.XmlUnionImpl;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptType;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.UniverseSchemeDocument;
@@ -43,11 +40,9 @@ import org.ddialliance.ddi3.xml.xmlbeans.datacollection.StatementItemType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.TextType;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategorySchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategoryType;
-import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CodeType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.AbstractIdentifiableType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.AbstractMaintainableType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.AbstractVersionableType;
-import org.ddialliance.ddi3.xml.xmlbeans.reusable.IDType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.LabelType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NameType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NoteDocument;
@@ -1289,11 +1284,18 @@ public class Ddi3Helper {
 		}
 	}
 
+	boolean yesToAllErrors = false;
+
 	public void handleParseError(ElementType elementType, String msg)
 			throws DDIFtpException {
 		// add to ques import prob view
 		createMarker(lineNo, msg,
 				elementType == null ? null : elementType.getElementName());
+
+		// if yes to all - continue
+		if (yesToAllErrors) {
+			return;
+		}
 
 		// display warning
 		StringBuilder msgTxt = new StringBuilder(msg);
@@ -1301,11 +1303,25 @@ public class Ddi3Helper {
 		msgTxt.append(Translator
 				.trans("line.valueRepresentationnotfound.continue"));
 
-		boolean yesNo = DialogUtil.yesNoDialog(
-				Translator.trans("line.continue"), msgTxt.toString());
-		if (!yesNo) {
+		String[] labels = new String[] { Translator.trans("line.error.ok"),
+				Translator.trans("line.error.oktoall"),
+				Translator.trans("line.error.cancel") };
+		int result = DialogUtil.customConfirmDialog(
+				Translator.trans("line.continue"), msgTxt.toString(), labels);
+		switch (result) {
+		case 0:
+			// yes
+			break;
+		case 1:
+			// yes to all
+			yesToAllErrors = true;
+			break;
+		case 2:
+			// cancel
 			throw new DDIFtpException("Import stopped",
 					new InterruptedException());
+		default:
+			break;
 		}
 	}
 
