@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.Writer;
 
 import org.ddialliance.ddieditor.ui.editor.Editor;
+import org.ddialliance.ddieditor.ui.preference.PreferenceUtil;
 import org.ddialliance.ddiftp.util.Translator;
 import org.ddialliance.ddiftp.util.log.Log;
 import org.ddialliance.ddiftp.util.log.LogFactory;
@@ -32,7 +33,8 @@ import dk.dda.ddieditor.line.util.Ddi3Helper;
 import dk.dda.ddieditor.line.wizard.LineWizard;
 
 public class EditWikiSyntaxDialog extends Dialog {
-	static private Log log = LogFactory.getLog(LogType.SYSTEM, Ddi3Helper.class);
+	static private Log log = LogFactory
+			.getLog(LogType.SYSTEM, Ddi3Helper.class);
 	public static final String ID = "dk.dda.ddieditor.line.dialog.EditWikiSyntaxDialog";
 	public String fileName;
 	public String result = "";
@@ -127,6 +129,7 @@ public class EditWikiSyntaxDialog extends Dialog {
 			public void widgetSelected(SelectionEvent e) {
 				// location
 				FileDialog fd = new FileDialog(currentShell, SWT.SAVE);
+				PreferenceUtil.setPathFilter(fd);
 				fd.setText(Translator.trans("line.wikieditdialog.savebutton"));
 				String[] filterExt = { "*.txt" };
 				fd.setFilterExtensions(filterExt);
@@ -140,8 +143,9 @@ public class EditWikiSyntaxDialog extends Dialog {
 					File f = new File(fileName);
 					if (!f.exists()) {
 						if (!f.createNewFile()) {
-							log.debug("File '"+fileName+"' overwritten");
-						};
+							log.debug("File '" + fileName + "' overwritten");
+						}
+						;
 					}
 					Writer output = new BufferedWriter(new FileWriter(f));
 					try {

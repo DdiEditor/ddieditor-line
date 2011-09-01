@@ -87,6 +87,7 @@ public class Wiki2Ddi3Scanner {
 	Pattern queiPattern = Pattern.compile("^\\*+ ?[vV][1-9]++");
 	Pattern mquePattern = Pattern.compile("^'{3}.+'{3}");
 	Pattern catePattern = Pattern.compile("^\\*{2} ?");
+	Pattern cateReusePattern = Pattern.compile("^\\*{2} ?[vV][1-9]+[0-9]*");
 	Pattern conditionPattern = Pattern
 			.compile(ConditionalUtil.conditionalPattern);
 
@@ -126,14 +127,20 @@ public class Wiki2Ddi3Scanner {
 				createUniverse(line);
 			return;
 		}
-		if (defineLine(line, queiPattern)) {
+
+		if (defineLine(line.trim(), cateReusePattern)) {
 			if (create)
-				createQuestion(line);
+				reuseCategory(line);
 			return;
 		}
 		if (defineLine(line, catePattern)) {
 			if (create)
 				createCategory(line);
+			return;
+		}
+		if (defineLine(line, queiPattern)) {
+			if (create)
+				createQuestion(line);
 			return;
 		}
 		if (line.indexOf(ifThenElseMatch) > -1) {
@@ -162,14 +169,14 @@ public class Wiki2Ddi3Scanner {
 				createMultipleQuestion(line);
 			return;
 		}
-		
+
 		errorList.add(Translator.trans("processLine.error.undefined",
 				new Object[] { lineNo, line }));
 		return;
 	}
 
 	private boolean defineLine(String line, Pattern pattern) {
-		Matcher matcher = pattern.matcher(line); 
+		Matcher matcher = pattern.matcher(line);
 		return matcher.find();
 	}
 
@@ -276,6 +283,20 @@ public class Wiki2Ddi3Scanner {
 		if (matcher.find()) {
 			int index = matcher.end();
 			ddi3Helper.createCategory(line.substring(index));
+		}
+	}
+
+	private void reuseCategory(String line) throws DDIFtpException {
+		Matcher matcher = catePattern.matcher(line);
+		if (matcher.find()) {
+			int index = matcher.end();
+			String catLine = line.substring(index).trim();
+
+			// reuse categories
+			matcher = variNamePattern.matcher(catLine);
+			if (matcher.find()) {
+				ddi3Helper.reuseCategories(catLine);
+			}
 		}
 	}
 

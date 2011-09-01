@@ -40,6 +40,7 @@ import org.ddialliance.ddi3.xml.xmlbeans.datacollection.StatementItemType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.TextType;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategorySchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategoryType;
+import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CodeType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.AbstractIdentifiableType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.AbstractMaintainableType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.AbstractVersionableType;
@@ -54,10 +55,12 @@ import org.ddialliance.ddi3.xml.xmlbeans.reusable.RepresentationType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.StructuredStringType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.UserIDType;
 import org.ddialliance.ddieditor.logic.identification.IdentificationManager;
+import org.ddialliance.ddieditor.logic.urn.ddi.ReferenceResolution;
 import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.CustomListType;
 import org.ddialliance.ddieditor.model.lightxmlobject.CustomType;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectListDocument;
+import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectListType;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
 import org.ddialliance.ddieditor.model.namespace.ddi3.Ddi3NamespaceHelper;
 import org.ddialliance.ddieditor.ui.dbxml.code.CodeSchemeDao;
@@ -545,22 +548,137 @@ public class Ddi3Helper {
 
 		// identification
 		UserIDType pseudoVariableId = getPseudoVariableId();
-
 		String queiName = getQuestionItemName();
+		resolveCodeScheme(text, pseudoVariableId.getStringValue(), queiName);
 
-		CustomType customType = getValueRepresentation(pseudoVariableId
-				.getStringValue());
-		if (customType == null || customType.getValue() == null) {
+		// add cate
+		try {
+			cods.getCodes().get(catIndex).addNewCategoryReference().addNewID()
+					.setStringValue(cat.getId());
+		} catch (IndexOutOfBoundsException e) {
 			handleParseError(ElementType.CATEGORY, Translator.trans(
-					"line.error.noncodevari", new Object[] { text,
-							pseudoVariableId.getStringValue(), queiName }));
+					"line.error.nocodetocategory", new Object[] { text,
+							queiName, pseudoVariableId.getStringValue() }));
+			return;
+		}
+	}
+
+	public void reuseCategories(String varId) throws DDIFtpException {
+		// identification
+		UserIDType pseudoVariableId = getPseudoVariableId();
+		String queiName = getQuestionItemName();
+		String text = Translator.trans("line.category.textrefered", varId);
+		resolveCodeScheme(text, pseudoVariableId.getStringValue(), queiName);
+
+		// cats
+		CustomType cus = getValueRepresentation(varId.toUpperCase());
+		LightXmlObjectListDocument list = null;
+		CodeScheme reuseCods = null;
+		ReferenceResolution refResolv = null;
+		try {
+			// resolve reference
+			list = DdiManager.getInstance().getCodeSchemesLight(
+					XmlBeansUtil.getTextOnMixedElement(cus), null, null, null);
+			if (list == null
+					|| list.getLightXmlObjectList().sizeOfLightXmlObjectArray() != 1) {
+				handleParseError(ElementType.CATEGORY, Translator.trans(
+						"line.error.codscatUnexpect", new Object[] { text,
+								pseudoVariableId, queiName }));
+				return;
+			}
+			String version = XmlBeansUtil.getXmlAttributeValue(list
+					.getLightXmlObjectList().xmlText(), "version=\"");
+			String parentId = XmlBeansUtil.getXmlAttributeValue(list
+					.getLightXmlObjectList().xmlText(), "parentId=\"");
+			String parentVersion = XmlBeansUtil.getXmlAttributeValue(list
+					.getLightXmlObjectList().xmlText(), "parentVersion=\"");
+			reuseCods = (CodeScheme) codeSchemedao.getModel(
+					XmlBeansUtil.getTextOnMixedElement(cus), version, parentId,
+					parentVersion);
+
+			refResolv = new ReferenceResolution(
+					reuseCods.getCategorySchemeReference());
+
+			// retrieve reference
+			for (CategorySchemeDocument catsTmp : catsList) {
+				if (catsTmp.getCategoryScheme().getId()
+						.equals(refResolv.getId())) {
+					cats = catsTmp;
+					break;
+				}
+			}
+			if (cats == null) {
+				LightXmlObjectListType lightCatsList = DdiManager
+						.getInstance()
+						.getCategorySchemesLight(refResolv.getId(), null, null,
+								null).getLightXmlObjectList();
+				for (LightXmlObjectType lightCats : lightCatsList
+						.getLightXmlObjectList()) {
+					if (lightCats.getId().equals(refResolv.getId())) {
+						cats = DdiManager.getInstance().getCategoryScheme(
+								refResolv.getId(), lightCats.getVersion(),
+								lightCats.getParentId(),
+								lightCats.getParentVersion());
+						break;
+					}
+				}
+			}
+		} catch (Exception e) {
+			throw new DDIFtpException(e.getMessage(), e);
+		}
+		if (cats == null) {
+			handleParseError(ElementType.CATEGORY, Translator.trans(
+					"line.error.nocodetocategory", new Object[] { text,
+							queiName, pseudoVariableId.getStringValue() }));
+			return;
+		}
+
+		// set default cats on cods
+		try {
+			cods.getDocument()
+					.getCodeScheme()
+					.setCategorySchemeReference(
+							reuseCods.getCategorySchemeReference());
+		} catch (Exception e) {
+			throw new DDIFtpException(e.getMessage(), e);
+		}
+
+		// set cate on code
+		int count = 0;
+		for (Iterator<CodeType> iterator = cods.getCodes().iterator(); iterator
+				.hasNext(); count++) {
+			CodeType code = iterator.next();
+			try {
+				code.addNewCategoryReference()
+						.addNewID()
+						.setStringValue(
+								cats.getCategoryScheme().getCategoryList()
+										.get(count).getId());
+			} catch (IndexOutOfBoundsException e) {
+				handleParseError(ElementType.CATEGORY, Translator.trans(
+						"line.error.nocodetocategory", new Object[] { text,
+								queiName, pseudoVariableId.getStringValue() }));
+				return;
+			}
+		}
+	}
+
+	private void resolveCodeScheme(String text, String pseudoVariableId,
+			String queiName) throws DDIFtpException {
+		CustomType customType = getValueRepresentation(pseudoVariableId);
+		if (customType == null || customType.getValue() == null) {
+			handleParseError(
+					ElementType.CATEGORY,
+					Translator.trans("line.error.noncodevari", new Object[] {
+							text, pseudoVariableId, queiName }));
 			return;
 		}
 		String codsId = XmlBeansUtil.getTextOnMixedElement(customType);
 		if (codsId.equals("")) {
-			handleParseError(ElementType.CATEGORY, Translator.trans(
-					"line.error.noncodevari", new Object[] { text,
-							pseudoVariableId.getStringValue(), queiName }));
+			handleParseError(
+					ElementType.CATEGORY,
+					Translator.trans("line.error.noncodevari", new Object[] {
+							text, pseudoVariableId, queiName }));
 			return;
 		}
 
@@ -573,12 +691,9 @@ public class Ddi3Helper {
 				if (list == null
 						|| list.getLightXmlObjectList()
 								.sizeOfLightXmlObjectArray() != 1) {
-					handleParseError(ElementType.CATEGORY,
-							Translator.trans(
-									"line.error.codscatUnexpect",
-									new Object[] { text,
-											pseudoVariableId.getStringValue(),
-											queiName }));
+					handleParseError(ElementType.CATEGORY, Translator.trans(
+							"line.error.codscatUnexpect", new Object[] { text,
+									pseudoVariableId, queiName }));
 					return;
 				}
 				String version = XmlBeansUtil.getXmlAttributeValue(list
@@ -589,23 +704,9 @@ public class Ddi3Helper {
 						.getLightXmlObjectList().xmlText(), "parentVersion=\"");
 				cods = (CodeScheme) codeSchemedao.getModel(codsId, version,
 						parentId, parentVersion);
-				cods.getDocument().getCodeScheme()
-						.addNewCategorySchemeReference().addNewID()
-						.setStringValue(cats.getCategoryScheme().getId());
 			} catch (Exception e) {
 				throw new DDIFtpException(e.getMessage());
 			}
-		}
-
-		// add category
-		try {
-			cods.getCodes().get(catIndex).addNewCategoryReference().addNewID()
-					.setStringValue(cat.getId());
-		} catch (IndexOutOfBoundsException e) {
-			handleParseError(ElementType.CATEGORY, Translator.trans(
-					"line.error.nocodetocategory", new Object[] { text,
-							queiName, pseudoVariableId.getStringValue() }));
-			return;
 		}
 	}
 
@@ -649,6 +750,10 @@ public class Ddi3Helper {
 							cats.getCategoryScheme().getCategoryList().size()
 									+ "" }));
 		}
+
+		// add default cats
+		cods.getDocument().getCodeScheme().addNewCategorySchemeReference()
+				.addNewID().setStringValue(cats.getCategoryScheme().getId());
 
 		// cods update
 		codeSchemedao.update(cods);
