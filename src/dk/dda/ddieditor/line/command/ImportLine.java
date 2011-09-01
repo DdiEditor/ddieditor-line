@@ -1,5 +1,6 @@
 package dk.dda.ddieditor.line.command;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -33,9 +34,11 @@ import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jface.dialogs.ProgressMonitorDialog;
+import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.WizardDialog;
-import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.ui.PlatformUI;
 import org.joda.time.Period;
 
@@ -65,11 +68,12 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 
 		if (returnCode != Window.CANCEL) {
 			// import questions
-			ImportDdiQuestionsRunnable longJob = new ImportDdiQuestionsRunnable(
-					ddi3Helper);
-
-			BusyIndicator.showWhile(PlatformUI.getWorkbench().getDisplay(),
-					longJob);
+			try {
+				ProgressMonitorDialog pmd = new ProgressMonitorDialog(null);
+				pmd.run(false, false, new ImportDdiQuestionsRunnable(ddi3Helper));
+			} catch (Exception e) {
+				Editor.showError(e, ID);
+			}
 
 			// refresh views
 			ViewManager.getInstance().addAllViewsToRefresh();
@@ -385,7 +389,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 	/**
 	 * Runnable wrapping import of questions to enable RCP busy indicator
 	 */
-	class ImportDdiQuestionsRunnable implements Runnable {
+	class ImportDdiQuestionsRunnable implements IRunnableWithProgress {
 		Ddi3Helper ddi3Helper;
 
 		ImportDdiQuestionsRunnable(Ddi3Helper ddi3Helper) {
@@ -393,7 +397,8 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 		}
 
 		@Override
-		public void run() {
+		public void run(IProgressMonitor monitor)
+				throws InvocationTargetException, InterruptedException {
 			try {
 				// yes - no for errors
 				IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
