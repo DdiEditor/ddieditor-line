@@ -318,6 +318,21 @@ public class Wiki2Ddi3Scanner {
 	 */
 	private void createIfThenElse(String line, boolean create) throws Exception {
 		String params[] = line.split(" ");
+		// check for multiple white spaces
+		for (String string : params) {
+			if (string.isEmpty()) {
+				ddi3Helper
+						.handleParseError(
+								ElementType.IF_THEN_ELSE,
+								Translator
+										.trans("line.parse.errorifthenelse",
+												new Object[] {
+														line,
+														Translator
+																.trans("line.parse.errormultiplewhitespaces") }));
+				return;
+			}
+		}
 		try {
 			// Concatenate statement elements
 			StringBuilder text = new StringBuilder();
