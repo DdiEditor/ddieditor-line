@@ -22,8 +22,6 @@ public class ResourcePage extends WizardPage {
 	public ReferenceSelectionCombo conRefSelectCombo = null;
 	public ReferenceSelectionCombo seqRefSelectCombo = null;
 	public ReferenceSelectionCombo quesRefSelectCombo = null;
-	boolean createConceptScheme = false;
-	boolean createUniverseScheme = false;
 
 	public ResourcePage() {
 		super(PAGE_NAME, Translator.trans("line.wizard.refpage.title"), null);
