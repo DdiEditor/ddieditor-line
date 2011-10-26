@@ -16,3 +16,6 @@ Require-Bundle: org.eclipse.ui,
  ddieditor-model;bundle-version="0.1.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
+Export-Package: dk.dda.ddieditor.line.command,
+ dk.dda.ddieditor.line.util,
+ dk.dda.ddieditor.line.wizard
