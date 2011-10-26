@@ -70,7 +70,8 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			// import questions
 			try {
 				ProgressMonitorDialog pmd = new ProgressMonitorDialog(null);
-				pmd.run(false, false, new ImportDdiQuestionsRunnable(ddi3Helper));
+				pmd.run(false, false,
+						new ImportDdiQuestionsRunnable(ddi3Helper));
 			} catch (Exception e) {
 				Editor.showError(e, ID);
 			}
@@ -88,7 +89,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 	 * @param ddi3Helper
 	 * @throws Exception
 	 */
-	protected void createDdi3(Ddi3Helper ddi3Helper) throws Exception {
+	public void createDdi3(Ddi3Helper ddi3Helper) throws Exception {
 		// study unit
 		LightXmlObjectType studyUnitLight = null;
 		List<LightXmlObjectType> studyUnits = DdiManager.getInstance()
@@ -299,12 +300,27 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					.newInstance();
 			doc.addNewLogicalProduct();
 
-			ddi3Helper.addIdAndVersion(doc.getLogicalProduct(), null, null);
+			ddi3Helper.addIdAndVersion(doc.getLogicalProduct(),
+					ElementType.LOGICAL_PRODUCT.getIdPrefix(), null);
 			logProdLight.setId(doc.getLogicalProduct().getId());
 			logProdLight.setVersion(doc.getLogicalProduct().getVersion());
 
-			DdiManager.getInstance().createElement(doc, studyUnitLight.getId(),
-					studyUnitLight.getVersion(), "studyunit__StudyUnit");
+			PersistenceManager.getInstance().insert(
+					DdiManager
+							.getInstance()
+							.getDdi3NamespaceHelper()
+							.substitutePrefixesFromElements(
+									doc.xmlText(DdiManager.getInstance()
+											.getXmlOptions())),
+					XQueryInsertKeyword.AFTER,
+					DdiManager.getInstance()
+							.getQueryElementString(dataColLight.getId(),
+									dataColLight.getVersion(),
+									"datacollection__DataCollection",
+									studyUnitLight.getId(),
+									studyUnitLight.getVersion(),
+									"studyunit__StudyUnit"));
+
 		} else {
 			logProdLight.setId(logProdList.get(0).getId());
 			logProdLight.setVersion(logProdList.get(0).getVersion());
