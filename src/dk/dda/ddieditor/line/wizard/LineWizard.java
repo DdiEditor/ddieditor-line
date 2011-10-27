@@ -58,6 +58,12 @@ public class LineWizard extends Wizard {
 		this.ddi3Helper = ddi3Helper;
 	}
 
+	public LineWizard(Ddi3Helper ddi3Helper, String wikiSyntax) {
+		super();
+		this.ddi3Helper = ddi3Helper;
+		WikiPage.wikiSyntax = wikiSyntax;
+	}
+
 	public Ddi3Helper getDdi3Helper() {
 		return ddi3Helper;
 	}
@@ -100,7 +106,8 @@ public class LineWizard extends Wizard {
 							new Cursor(PlatformUI.getWorkbench().getDisplay(),
 									SWT.CURSOR_WAIT));
 			// universe
-			if (resourcePage.uniRefSelectCombo.getResult() != null
+			if (resourcePage.uniRefSelectCombo != null
+					&& resourcePage.uniRefSelectCombo.getResult() != null
 					&& checkRefSelection(resourcePage.uniRefSelectCombo
 							.getResult())) {
 				ddi3Helper.univ = DdiManager
@@ -117,7 +124,8 @@ public class LineWizard extends Wizard {
 			}
 
 			// concept
-			if (resourcePage.conRefSelectCombo.getResult() != null
+			if (resourcePage.conRefSelectCombo != null
+					&& resourcePage.conRefSelectCombo.getResult() != null
 					&& checkRefSelection(resourcePage.conRefSelectCombo
 							.getResult())) {
 				ddi3Helper.conc = DdiManager
@@ -134,7 +142,8 @@ public class LineWizard extends Wizard {
 			}
 
 			// question scheme
-			if (resourcePage.quesRefSelectCombo.getResult() != null
+			if (resourcePage.quesRefSelectCombo != null
+					&& resourcePage.quesRefSelectCombo.getResult() != null
 					&& checkRefSelection(resourcePage.quesRefSelectCombo
 							.getResult())) {
 				ddi3Helper.ques = DdiManager.getInstance().getQuestionScheme(
@@ -148,7 +157,8 @@ public class LineWizard extends Wizard {
 			}
 
 			// main sequence
-			if (resourcePage.seqRefSelectCombo.getResult() != null
+			if (resourcePage.seqRefSelectCombo != null
+					&& resourcePage.seqRefSelectCombo.getResult() != null
 					&& checkRefSelection(resourcePage.seqRefSelectCombo
 							.getResult())) {
 				ddi3Helper.mainSeq = DdiManager
