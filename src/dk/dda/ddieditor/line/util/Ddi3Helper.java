@@ -752,8 +752,11 @@ public class Ddi3Helper {
 		}
 
 		// add default cats
-		cods.getDocument().getCodeScheme().addNewCategorySchemeReference()
-				.addNewID().setStringValue(cats.getCategoryScheme().getId());
+		if (cods.getCategorySchemeReference() == null) {
+			cods.getDocument().getCodeScheme().addNewCategorySchemeReference()
+					.addNewID()
+					.setStringValue(cats.getCategoryScheme().getId());
+		}
 
 		// cods update
 		codeSchemedao.update(cods);
