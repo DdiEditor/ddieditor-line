@@ -31,6 +31,7 @@ import org.ddialliance.ddi3.xml.xmlbeans.datacollection.NumericDomainDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.NumericDomainType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionConstructDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionConstructType;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionItemDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionItemType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.SequenceDocument;
@@ -41,6 +42,7 @@ import org.ddialliance.ddi3.xml.xmlbeans.datacollection.TextType;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategorySchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategoryType;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CodeType;
+import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.VariableDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.AbstractIdentifiableType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.AbstractMaintainableType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.AbstractVersionableType;
@@ -76,6 +78,7 @@ import org.ddialliance.ddieditor.ui.model.variable.Variable;
 import org.ddialliance.ddieditor.ui.preference.PreferenceUtil;
 import org.ddialliance.ddieditor.ui.util.DialogUtil;
 import org.ddialliance.ddieditor.util.DdiEditorConfig;
+import org.ddialliance.ddieditor.util.LightXmlObjectUtil;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
 import org.ddialliance.ddiftp.util.log.Log;
@@ -918,10 +921,17 @@ public class Ddi3Helper {
 				.substitute(SequenceDocument.type.getDocumentElementName(),
 						SequenceType.type);
 		addIdAndVersion(seq, ElementType.SEQUENCE.getIdPrefix(), null);
-		setText(seq.addNewLabel(), ElementType.SEQUENCE.getIdPrefix()
-				+ "-"
-				+ getLabelText(quei.getQuestionItemNameArray(0)
-						.getStringValue()));
+		String labelSeq = ElementType.SEQUENCE.getIdPrefix() + "-";
+
+		// statementText;
+		if (quei != null) {
+			labelSeq = labelSeq
+					+ getLabelText(quei.getQuestionItemNameArray(0)
+							.getStringValue());
+		} else {
+			labelSeq = labelSeq + statementText;
+		}
+		setText(seq.addNewLabel(), labelSeq);
 
 		// statement item
 		createStatementItem(statementText, seq);
@@ -930,8 +940,8 @@ public class Ddi3Helper {
 		ModelAccessor.setReference(
 				seq.addNewControlConstructReference(),
 				createLightXmlObject(cocs.getControlConstructScheme().getId(),
-						cocs.getControlConstructScheme().getVersion(),
-						then.substring(1), null));
+						cocs.getControlConstructScheme().getVersion(), then,
+						null));
 		postResolveItemRefs.add(seq);
 
 		// if then else
@@ -947,7 +957,6 @@ public class Ddi3Helper {
 				IfThenElseDocument.Factory
 						.parse(ifthenelse.xmlText(xmlOptions)),
 				null, null);
-
 		model.setCreate(true);
 
 		// ProgrammingLanguageCodeType
@@ -1225,15 +1234,32 @@ public class Ddi3Helper {
 	}
 
 	private void cleanSequenceForDublicateCcRefs() throws DDIFtpException {
+		if (postCleanMainSeqItems.isEmpty()) {
+			return;
+		}
 		String[] ccIds = new String[postCleanMainSeqItems.size()];
 		int count = 0;
 		for (String pseudoVarId : postCleanMainSeqItems) {
 			if (pseudoVarIdToCcIdMap.get(pseudoVarId) != null) {
 				ccIds[count] = pseudoVarIdToCcIdMap.get(pseudoVarId).getId();
 			} else {
-				throw new DDIFtpException(
-						Translator.trans("variable.label.notfound",
+				try {
+					VariableDocument varDoc = DdiManager.getInstance()
+							.getVariableByVariableName("V" + pseudoVarId);
+					if (varDoc != null) {
+						// do nothing
+					} else {
+						throw new DDIFtpException(Translator.trans(
+								"variable.label.notfound",
 								new Object[] { pseudoVarId }), new Throwable());
+					}
+				} catch (Exception e) {
+					if (e instanceof DDIFtpException) {
+						throw (DDIFtpException) e;
+					} else {
+						throw new DDIFtpException(e);
+					}
+				}
 			}
 			count++;
 		}
@@ -1242,7 +1268,7 @@ public class Ddi3Helper {
 				.hasNext();) {
 			String id = iterator.next().getIDArray(0).getStringValue();
 			for (int i = 0; i < ccIds.length; i++) {
-				if (ccIds[i].equals(id)) {
+				if (ccIds[i] != null && ccIds[i].equals(id)) {
 					iterator.remove();
 					break;
 				}
@@ -1273,10 +1299,25 @@ public class Ddi3Helper {
 		}
 	}
 
-	private ReferenceType changeCcReference(ReferenceType reference) {
+	private ReferenceType changeCcReference(ReferenceType reference)
+			throws DDIFtpException, Exception {
 		ReferenceType ref = null;
 		String id = reference.getIDList().get(0).getStringValue();
-		LightXmlObjectType newId = pseudoVarIdToCcIdMap.get(id);
+		LightXmlObjectType newId = pseudoVarIdToCcIdMap.get(id.substring(1));
+		if (newId == null) {
+			QuestionItemDocument quei = DdiManager.getInstance()
+					.getQuestionItembyUserId(id);
+			if (quei != null) {
+				QuestionConstructDocument queCC = DdiManager.getInstance()
+						.getQuestionConstructByQuestionId(
+								quei.getQuestionItem().getId());
+				if (queCC != null) {
+					newId = LightXmlObjectType.Factory.newInstance();
+					newId.setId(queCC.getQuestionConstruct().getId());
+					newId.setVersion(queCC.getQuestionConstruct().getVersion());
+				}
+			}
+		}
 		if (newId != null) {
 			ref = ModelAccessor.setReference(reference, newId);
 		}
@@ -1306,7 +1347,8 @@ public class Ddi3Helper {
 		}
 	}
 
-	private void postResolveQueiReference(ReferenceType reference) {
+	private void postResolveQueiReference(ReferenceType reference)
+			throws Exception {
 		String id = XmlBeansUtil.getTextOnMixedElement(reference);
 
 		// resolve reference
@@ -1326,6 +1368,36 @@ public class Ddi3Helper {
 									.getVersion(), quei.getId(), quei
 									.getVersion()));
 
+					break;
+				}
+			}
+		}
+
+		// not found in list look it up
+		if (XmlBeansUtil.getTextOnMixedElement(reference).equals(id)) {
+			List<LightXmlObjectType> queiPlusList = DdiManager.getInstance()
+					.getQuestionItemsLightPlus(true, null, null, null, null)
+					.getLightXmlObjectList().getLightXmlObjectList();
+
+			for (LightXmlObjectType queiPlus : queiPlusList) {
+				for (CustomType userIdCus : LightXmlObjectUtil
+						.getCustomListbyType(queiPlus, "UserID")) {
+					if (userIdCus.getValue() != null
+							&& userIdCus.getValue().toLowerCase().equals(id)) {
+						// set reference
+						ModelAccessor
+								.setReference(
+										reference,
+										createLightXmlObject(
+												queiPlus.getParentId(),
+												queiPlus.getParentVersion(),
+												queiPlus.getId(),
+												queiPlus.getVersion()));
+						id = null;
+						break;
+					}
+				}
+				if (id == null) {
 					break;
 				}
 			}
