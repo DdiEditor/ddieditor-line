@@ -354,7 +354,7 @@ public class Wiki2Ddi3Scanner {
 			}
 
 			// else
-			if (params[3].equals("na")) {
+			if (params[3].equals("na")||params[3].equals("NA")) {
 				params[3] = null;
 			} else if (variNamePattern.matcher(params[3]).find()) {
 				params[3] = "V" + params[3].substring(1);
