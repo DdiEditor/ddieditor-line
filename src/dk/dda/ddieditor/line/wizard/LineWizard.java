@@ -239,9 +239,13 @@ public class LineWizard extends Wizard {
 	}
 
 	public static String readFile(String fileName) {
+		return readFile(fileName, "utf-8");
+	}
+	
+	public static String readFile(String fileName, String charset) {
 		Scanner scanner = null;
 		try {
-			scanner = new Scanner(new File(fileName), "utf-8");
+			scanner = new Scanner(new File(fileName), charset);
 		} catch (FileNotFoundException e2) {
 			MessageDialog.openError(PlatformUI.getWorkbench().getDisplay()
 					.getActiveShell(), Translator.trans("ErrorTitle"),
