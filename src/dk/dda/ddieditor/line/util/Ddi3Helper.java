@@ -142,11 +142,17 @@ public class Ddi3Helper {
 	String labelPostFix = " ...";
 
 	String agency = PreferenceUtil.getDdiAgency();
+	boolean isBatchMode = false;
 
 	public Ddi3Helper() throws DDIFtpException {
 		xmlOptions.setSaveAggressiveNamespaces();
 		xmlOptions.setSavePrettyPrint();
 		xmlOptions.setSaveOuter();
+	}
+
+	public Ddi3Helper(boolean isBatchMode) throws DDIFtpException {
+		super();
+		this.yesToAllErrors = isBatchMode;
 	}
 
 	public void initDdi3() throws DDIFtpException {
