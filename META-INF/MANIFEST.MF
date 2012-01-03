@@ -3,19 +3,21 @@ Bundle-ManifestVersion: 2
 Bundle-Name: DdiEditor Line
 Bundle-SymbolicName: ddieditor-line;singleton:=true
 Bundle-Version: 0.11.0
+Bundle-ClassPath: ddieditor-line,
+ bin/
 Bundle-Activator: dk.dda.ddieditor.line.osgi.Activator
 Bundle-Vendor: Danish Data Archive
-Require-Bundle: org.eclipse.ui,
- org.eclipse.core.runtime,
- ddieditor-ui;bundle-version="0.5.0",
- ddieditor;bundle-version="0.7.0",
- util;bundle-version="0.11.0",
- lib-java;bundle-version="0.4.2",
- org.eclipse.ui.ide,
- org.eclipse.core.resources,
- ddieditor-model;bundle-version="0.1.0"
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Bundle-ActivationPolicy: lazy
 Export-Package: dk.dda.ddieditor.line.command,
  dk.dda.ddieditor.line.util,
  dk.dda.ddieditor.line.wizard
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.core.resources,
+ org.eclipse.ui,
+ org.eclipse.ui.ide,
+ lib-java;bundle-version="0.10.0",
+ util;bundle-version="0.11.0",
+ ddieditor;bundle-version="0.17.0",
+ ddieditor-model;bundle-version="0.1.0",
+ ddieditor-ui;bundle-version="0.13.0"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-ActivationPolicy: lazy
