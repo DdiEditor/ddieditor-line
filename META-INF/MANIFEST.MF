@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: DdiEditor Line
 Bundle-SymbolicName: ddieditor-line;singleton:=true
 Bundle-Version: 0.11.0
-Bundle-ClassPath: ddieditor-line,
+Bundle-ClassPath: .,
  bin/
 Bundle-Activator: dk.dda.ddieditor.line.osgi.Activator
 Bundle-Vendor: Danish Data Archive
