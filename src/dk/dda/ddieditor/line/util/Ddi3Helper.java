@@ -105,6 +105,7 @@ public class Ddi3Helper {
 	List<UniverseSchemeDocument> unisList = new ArrayList<UniverseSchemeDocument>();
 	List<NoteDocument> noteList = new ArrayList<NoteDocument>();
 	List<ConceptSchemeDocument> consList = new ArrayList<ConceptSchemeDocument>();
+	List<SequenceDocument> seqList = new ArrayList<SequenceDocument>();
 	List<QuestionSchemeDocument> quesList = new ArrayList<QuestionSchemeDocument>();
 	List<CategorySchemeDocument> catsList = new ArrayList<CategorySchemeDocument>();
 	int catIndex;
@@ -115,6 +116,7 @@ public class Ddi3Helper {
 
 	UniverseSchemeDocument unis;
 	public UniverseType univ;
+	public SequenceDocument curSubSeq = null;
 	ConceptSchemeDocument cons;
 	public ConceptType conc;
 	MultipleQuestionItemDocument mquem;
@@ -135,6 +137,7 @@ public class Ddi3Helper {
 	List<XmlObject> postResolveItemRefs = new ArrayList<XmlObject>();
 	Map<String, LightXmlObjectType> pseudoVarIdToUnivIdMap = new HashMap<String, LightXmlObjectType>();
 	List<String> postCleanMainSeqItems = new ArrayList<String>();
+	Map<String, SequenceDocument> postResolveSeqRefs = new HashMap<String, SequenceDocument>();
 
 	public XmlOptions xmlOptions = new XmlOptions();
 
@@ -225,6 +228,35 @@ public class Ddi3Helper {
 		if (checkString(description))
 			setText(result.addNewHumanReadable(), description);
 		univ = result;
+	}
+	
+	// ==sequence-id==sequence label
+	public void createSequence(String pseudoId, String label)
+			throws DDIFtpException {
+		SequenceDocument result = SequenceDocument.Factory
+				.newInstance();
+		result.addNewSequence();
+		addIdAndVersion(result.getSequence(),
+				ElementType.SEQUENCE.getIdPrefix(), null);
+		
+		// pseudoSequenceId
+		UserIDType userId = result.getSequence().addNewUserID();
+		userId.setType(Ddi3NamespaceHelper.SEQ_USER_ID_TYPE);
+		userId.setStringValue(pseudoId);
+		postResolveSeqRefs.put(pseudoId, result);
+
+		// label
+		if (checkString(label))
+			setText(result.getSequence().addNewLabel(), label);
+
+		curSubSeq = result;
+		seqList.add(result);
+		createUniverse(label, label);
+	}
+
+	// ==end==
+	public void endSequence() {
+		curSubSeq = null;
 	}
 
 	/**
@@ -444,8 +476,8 @@ public class Ddi3Helper {
 		setReference(questionConstruct.addNewQuestionReference(), parentId,
 				parentVersion, id, version);
 
-		// add cc ref to main seq
-		addControlConstructToMainSequence(questionConstruct);
+		// add cc ref to seq
+		addControlConstructToSequence(questionConstruct);
 
 		return questionConstruct;
 	}
@@ -776,7 +808,13 @@ public class Ddi3Helper {
 	}
 
 	public void createStatementItem(String statementText) throws Exception {
-		createStatementItem(statementText, mainSeq);
+		SequenceType seq = null;
+		if (curSubSeq != null) {
+			seq = curSubSeq.getSequence();
+		} else {
+			seq = mainSeq;
+		}
+		createStatementItem(statementText, seq);
 	}
 
 	private void createStatementItem(String statementText, SequenceType seq)
@@ -835,7 +873,7 @@ public class Ddi3Helper {
 		model.applyChange(createLightXmlObject("", "", variref, ""),
 				ModelIdentifingType.Type_B.class);
 		postResolveItemRefs.add(model.getDocument().getComputationItem());
-		addControlConstructToMainSequence(model.getDocument()
+		addControlConstructToSequence(model.getDocument()
 				.getComputationItem());
 	}
 
@@ -911,46 +949,51 @@ public class Ddi3Helper {
 
 	public void createIfThenElse(String condition, String then, String elze,
 			String statementText) throws Exception {
-		// universe
 		UniverseType prevUniv = univ;
-		createUniverse(getLabelText(statementText), getLabelText(statementText));
-		LightXmlObjectType univLight = createLightXmlObject(unis
-				.getUniverseScheme().getId(), unis.getUniverseScheme()
-				.getVersion(), univ.getId(), univ.getVersion());
-		pseudoVarIdToUnivIdMap.put(then, univLight);
-		updateVariableUniverseReference(then, univLight);
+		SequenceType seq = null;
+		if (then.indexOf("V") == 0) {
+			// then ref. to Question Item
+			// create new universe
+			createUniverse(getLabelText(statementText),
+					getLabelText(statementText));
+			LightXmlObjectType univLight = createLightXmlObject(unis
+					.getUniverseScheme().getId(), unis.getUniverseScheme()
+					.getVersion(), univ.getId(), univ.getVersion());
+			pseudoVarIdToUnivIdMap.put(then, univLight);
+			updateVariableUniverseReference(then, univLight);
+		
+			// create sub-sequence
+			seq = (SequenceType) cocs
+					.getControlConstructScheme()
+					.addNewControlConstruct()
+					.substitute(SequenceDocument.type.getDocumentElementName(),
+							SequenceType.type);
+			addIdAndVersion(seq, ElementType.SEQUENCE.getIdPrefix(), null);
+			String labelSeq = ElementType.SEQUENCE.getIdPrefix() + "-";
 
-		// seq
-		SequenceType seq = (SequenceType) cocs
-				.getControlConstructScheme()
-				.addNewControlConstruct()
-				.substitute(SequenceDocument.type.getDocumentElementName(),
-						SequenceType.type);
-		addIdAndVersion(seq, ElementType.SEQUENCE.getIdPrefix(), null);
-		String labelSeq = ElementType.SEQUENCE.getIdPrefix() + "-";
+			// - statementText;
+			if (quei != null) {
+				labelSeq = labelSeq
+						+ getLabelText(quei.getQuestionItemNameArray(0)
+								.getStringValue());
+			} else {
+				labelSeq = labelSeq + statementText;
+			}
+			setText(seq.addNewLabel(), labelSeq);
 
-		// statementText;
-		if (quei != null) {
-			labelSeq = labelSeq
-					+ getLabelText(quei.getQuestionItemNameArray(0)
-							.getStringValue());
-		} else {
-			labelSeq = labelSeq + statementText;
+			// create statement addControlConstructToSequenceitem
+			createStatementItem(statementText, seq);
+
+			// ref. next question item
+			ModelAccessor.setReference(
+					seq.addNewControlConstructReference(),
+					createLightXmlObject(cocs.getControlConstructScheme()
+							.getId(), cocs.getControlConstructScheme()
+							.getVersion(), then, null));
+			postResolveItemRefs.add(seq);
 		}
-		setText(seq.addNewLabel(), labelSeq);
 
-		// statement item
-		createStatementItem(statementText, seq);
-
-		// ref next question item
-		ModelAccessor.setReference(
-				seq.addNewControlConstructReference(),
-				createLightXmlObject(cocs.getControlConstructScheme().getId(),
-						cocs.getControlConstructScheme().getVersion(), then,
-						null));
-		postResolveItemRefs.add(seq);
-
-		// if then else
+		// create if then else
 		IfThenElseType ifthenelse = (IfThenElseType) cocs
 				.getControlConstructScheme()
 				.addNewControlConstruct()
@@ -981,18 +1024,30 @@ public class Ddi3Helper {
 		}
 
 		// then reference
-		model.applyChange(
-				createLightXmlObject(cocs.getControlConstructScheme().getId(),
-						cocs.getControlConstructScheme().getVersion(),
-						seq.getId(), seq.getVersion()),
-				ModelIdentifingType.Type_C.class);
+		if (then.indexOf("V") == 0) {
+			// question ref.
+			model.applyChange(
+					createLightXmlObject(cocs.getControlConstructScheme().getId(),
+							cocs.getControlConstructScheme().getVersion(),
+							seq.getId(), seq.getVersion()),
+					ModelIdentifingType.Type_C.class);
+			postCleanMainSeqItems.add(then.substring(1));
+		} else {
+			// sequence ref.
+			model.applyChange(
+					createLightXmlObject(null, null, then, null),
+					ModelIdentifingType.Type_C.class);
+		}
 
 		// else reference
 		if (elze != null) {
 			model.applyChange(
-					createLightXmlObject(null, null, elze.substring(1), null),
+					createLightXmlObject(null, null, (elze.indexOf("V") == 0 ? elze.substring(1) : elze) , null),
 					ModelIdentifingType.Type_D.class);
-			postCleanMainSeqItems.add(elze.substring(1));
+			if (then.indexOf("V") == 0) {
+				// post clean seq for created quei cc
+				postCleanMainSeqItems.add(elze.substring(1));
+			}
 		}
 
 		// label
@@ -1000,24 +1055,28 @@ public class Ddi3Helper {
 				getLabelText(statementText));
 		ifthenelse.set(model.getDocument().getIfThenElse());
 
-		// add to main seq
-		addControlConstructToMainSequence(ifthenelse);
+		// add to seq
+		addControlConstructToSequence(ifthenelse);
 
 		// add to post resolve items
 		postResolveItemRefs.add(ifthenelse);
-
-		// post clean seq for created quei cc
-		postCleanMainSeqItems.add(then.substring(1));
 
 		// reset univ
 		univ = prevUniv;
 	}
 
-	private void addControlConstructToMainSequence(
+	private void addControlConstructToSequence(
 			ControlConstructType controlConstruct) {
-		setReference(mainSeq.addNewControlConstructReference(), cocs
-				.getControlConstructScheme().getId(), cocs
-				.getControlConstructScheme().getVersion(),
+		SequenceType seq = null;
+		if (curSubSeq != null) {
+			seq = curSubSeq.getSequence();
+		} else {
+			seq = mainSeq;
+		}
+		setReference(
+				seq.addNewControlConstructReference(),
+				cocs.getControlConstructScheme().getId(), cocs
+						.getControlConstructScheme().getVersion(),
 				controlConstruct.getId(), controlConstruct.getVersion());
 	}
 
@@ -1165,7 +1224,7 @@ public class Ddi3Helper {
 			if (xmlobject instanceof SequenceType) {
 				SequenceType xml = (SequenceType) xmlobject;
 				for (ReferenceType ref : xml.getControlConstructReferenceList()) {
-					changeCcReference(ref);
+					changeCcReference(ref);  
 				}
 			}
 			// if then else
@@ -1173,7 +1232,7 @@ public class Ddi3Helper {
 				IfThenElseType xml = (IfThenElseType) xmlobject;
 				// then
 				changeCcReference(xml.getThenConstructReference());
-				// elze
+				// else
 				if (xml.getElseConstructReference() != null) {
 					changeCcReference(xml.getElseConstructReference());
 				}
@@ -1252,12 +1311,19 @@ public class Ddi3Helper {
 				try {
 					VariableDocument varDoc = DdiManager.getInstance()
 							.getVariableByVariableName("V" + pseudoVarId);
-					if (varDoc != null) {
-						// do nothing
-					} else {
-						throw new DDIFtpException(Translator.trans(
-								"variable.label.notfound",
-								new Object[] { pseudoVarId }), new Throwable());
+					if (varDoc == null) {
+						// check if sequence exist
+						LightXmlObjectListDocument lightXmlDoc = DdiManager
+								.getInstance().getSequencesLight(pseudoVarId,
+										null, null, null);
+						if (lightXmlDoc != null) {
+							// do nothing
+						} else {
+							throw new DDIFtpException(Translator.trans(
+									"variable.label.notfound",
+									new Object[] { pseudoVarId }),
+									new Throwable());
+						}
 					}
 				} catch (Exception e) {
 					if (e instanceof DDIFtpException) {
@@ -1321,6 +1387,17 @@ public class Ddi3Helper {
 					newId = LightXmlObjectType.Factory.newInstance();
 					newId.setId(queCC.getQuestionConstruct().getId());
 					newId.setVersion(queCC.getQuestionConstruct().getVersion());
+				}
+			} else {
+				SequenceDocument seqDoc = postResolveSeqRefs.get(id);
+				if (seqDoc != null) {
+					newId = LightXmlObjectType.Factory.newInstance();
+					newId.setId(seqDoc.getSequence().getId());
+					newId.setVersion(seqDoc.getSequence().getVersion());
+				} else {
+					throw new DDIFtpException(
+							"Control Construct Reference not solved: "+id,
+							new Throwable());
 				}
 			}
 		}
@@ -1412,6 +1489,10 @@ public class Ddi3Helper {
 
 	public List<UniverseSchemeDocument> getUnisList() {
 		return unisList;
+	}
+
+	public List<SequenceDocument> getSeqList() {
+		return seqList;
 	}
 
 	public List<ConceptSchemeDocument> getConsList() {

@@ -22,6 +22,7 @@ public class Wiki2Ddi3Scanner {
 	int lineNo = 0;
 
 	Ddi3Helper ddi3Helper = null;
+	final static String SEQ_END = "end";
 	final static String MQUE_END = "end";
 
 	public Wiki2Ddi3Scanner(Ddi3Helper ddi3Helper) {
@@ -83,7 +84,8 @@ public class Wiki2Ddi3Scanner {
 	Pattern variNamePattern = Pattern.compile("[vV][1-9]+[0-9]*");
 
 	Pattern univPattern = Pattern.compile("^[=]{1}.+[=]{1}");
-	Pattern quesPattern = Pattern.compile("^[=]{2}.+[=]{2}");
+	Pattern seqPattern = Pattern.compile("^[=]{2}.+[=]{2}");
+	Pattern quesPattern = Pattern.compile("^[=]{3}.+[=]{3}");
 	Pattern queiPattern = Pattern.compile("^\\*+ ?[vV][1-9]++");
 	Pattern mquePattern = Pattern.compile("^'{3}.+'{3}");
 	Pattern catePattern = Pattern.compile("^\\*{2} ?");
@@ -116,6 +118,12 @@ public class Wiki2Ddi3Scanner {
 			}
 		}
 
+		if (defineLine(line, seqPattern)) {
+			if (create) {
+				createSequence(line);
+			}
+			return;
+		}
 		if (defineLine(line, quesPattern)) {
 			if (create) {
 				createQuestionScheme(line);
@@ -207,16 +215,43 @@ public class Wiki2Ddi3Scanner {
 	}
 
 	/**
+	 * Create Sequence
+	 * 
+	 * @param line
+	 *            of '==sequence-id==sequence label'
+	 * @throws DDIFtpException
+	 */
+	private void createSequence(String line) throws DDIFtpException {
+		// label
+		String id = null;
+		int index = line.indexOf("==", 2);
+		if (index > -1) {
+			id = line.substring(2, index);
+		}
+
+		// label
+		String label = null;
+		if (!(line.substring(index + 2).equals(""))) {
+			label = line.substring(index + 2);
+		}
+		if (id.equals(SEQ_END)) {
+			ddi3Helper.endSequence();
+		} else {
+			ddi3Helper.createSequence(id, label);
+		}
+	}
+
+	/**
 	 * Create question scheme
 	 * 
 	 * @param line
-	 *            of '==questionscheme label==questionscheme description'
+	 *            of '===questionscheme label===questionscheme description'
 	 * @throws DDIFtpException
 	 */
 	private void createQuestionScheme(String line) throws DDIFtpException {
 		// label
 		String label = null;
-		int index = line.indexOf("==", 2);
+		int index = line.indexOf("===", 2);
 		if (index > -1) {
 			label = line.substring(2, index);
 		}
@@ -312,7 +347,7 @@ public class Wiki2Ddi3Scanner {
 	 * </ul>
 	 * 
 	 * @param line
-	 *            of '''''ifthenelse''''' v1>2||V1==10&&V2==10 v6 v2 How many
+	 *            of ''ifthenelse'' v1>2||V1==10&&V2==10 v6 v2 How many
 	 *            times a day?
 	 * @throws Exception
 	 */

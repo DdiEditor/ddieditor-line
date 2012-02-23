@@ -266,10 +266,25 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 		}
 
 		// sequence
-		SequenceDocument seqDoc = SequenceDocument.Factory
-				.parse(ddi3Helper.mainSeq.xmlText(ddi3Helper.xmlOptions));
-		DdiManager.getInstance().updateElement(seqDoc,
-				ddi3Helper.mainSeq.getId(), ddi3Helper.mainSeq.getVersion());
+		if (ddi3Helper.getSeqList().size() == 0) {
+			if (ddi3Helper.mainSeq != null && ddi3Helper.curSubSeq == null) {
+				SequenceDocument seqDoc = SequenceDocument.Factory
+						.parse(ddi3Helper.mainSeq
+								.xmlText(ddi3Helper.xmlOptions));
+
+				DdiManager.getInstance().updateElement(seqDoc,
+						ddi3Helper.mainSeq.getId(),
+						ddi3Helper.mainSeq.getVersion());
+			}
+		} else {
+			for (SequenceDocument seqDoc : ddi3Helper.getSeqList()) {
+				DdiManager.getInstance().createElement(
+						seqDoc,
+						ddi3Helper.cocs.getControlConstructScheme().getId(),
+						ddi3Helper.cocs.getControlConstructScheme()
+								.getVersion(), "ControlConstructScheme");
+			}
+		}
 
 		// notes
 		for (NoteDocument doc : ddi3Helper.getNotes()) {
