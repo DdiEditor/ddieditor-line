@@ -118,15 +118,15 @@ public class Wiki2Ddi3Scanner {
 			}
 		}
 
-		if (defineLine(line, seqPattern)) {
-			if (create) {
-				createSequence(line);
-			}
-			return;
-		}
 		if (defineLine(line, quesPattern)) {
 			if (create) {
 				createQuestionScheme(line);
+			}
+			return;
+		}
+		if (defineLine(line, seqPattern)) {
+			if (create) {
+				createSequence(line);
 			}
 			return;
 		}
@@ -253,13 +253,13 @@ public class Wiki2Ddi3Scanner {
 		String label = null;
 		int index = line.indexOf("===", 2);
 		if (index > -1) {
-			label = line.substring(2, index);
+			label = line.substring(3, index);
 		}
 
 		// description
 		String description = null;
-		if (!(line.substring(index + 2).equals(""))) {
-			description = line.substring(index + 2);
+		if (!(line.substring(index + 3).equals(""))) {
+			description = line.substring(index + 3);
 		}
 		ddi3Helper.createQuestionScheme(label, description);
 	}
