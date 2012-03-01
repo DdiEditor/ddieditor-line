@@ -2,7 +2,9 @@ package dk.dda.ddieditor.line.dialog;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 
 import org.ddialliance.ddieditor.ui.editor.Editor;
@@ -147,7 +149,8 @@ public class EditWikiSyntaxDialog extends Dialog {
 						}
 						;
 					}
-					Writer output = new BufferedWriter(new FileWriter(f));
+					Writer output = new BufferedWriter(new OutputStreamWriter(
+							new FileOutputStream(f), "UTF8"));
 					try {
 						output.write(result);
 					} finally {
