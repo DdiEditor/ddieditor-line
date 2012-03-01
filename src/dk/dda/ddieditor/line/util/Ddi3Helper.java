@@ -1394,11 +1394,7 @@ public class Ddi3Helper {
 					newId = LightXmlObjectType.Factory.newInstance();
 					newId.setId(seqDoc.getSequence().getId());
 					newId.setVersion(seqDoc.getSequence().getVersion());
-				} else {
-					throw new DDIFtpException(
-							"Control Construct Reference not solved: "+id,
-							new Throwable());
-				}
+				} 
 			}
 		}
 		if (newId != null) {
