@@ -136,7 +136,7 @@ public class Ddi3Helper {
 	Map<String, LightXmlObjectType> pseudoVarIdToCcIdMap = new HashMap<String, LightXmlObjectType>();
 	List<XmlObject> postResolveItemRefs = new ArrayList<XmlObject>();
 	Map<String, LightXmlObjectType> pseudoVarIdToUnivIdMap = new HashMap<String, LightXmlObjectType>();
-	List<String> postCleanMainSeqItems = new ArrayList<String>();
+	List<String> postCleanSeqItems = new ArrayList<String>();
 	Map<String, SequenceDocument> postResolveSeqRefs = new HashMap<String, SequenceDocument>();
 
 	public XmlOptions xmlOptions = new XmlOptions();
@@ -1031,7 +1031,7 @@ public class Ddi3Helper {
 							cocs.getControlConstructScheme().getVersion(),
 							seq.getId(), seq.getVersion()),
 					ModelIdentifingType.Type_C.class);
-			postCleanMainSeqItems.add(then.substring(1));
+			postCleanSeqItems.add(then.substring(1));
 		} else {
 			// sequence ref.
 			model.applyChange(
@@ -1041,12 +1041,11 @@ public class Ddi3Helper {
 
 		// else reference
 		if (elze != null) {
-			model.applyChange(
-					createLightXmlObject(null, null, (elze.indexOf("V") == 0 ? elze.substring(1) : elze) , null),
+			model.applyChange(createLightXmlObject(null, null, elze, null),
 					ModelIdentifingType.Type_D.class);
 			if (then.indexOf("V") == 0) {
 				// post clean seq for created quei cc
-				postCleanMainSeqItems.add(elze.substring(1));
+				postCleanSeqItems.add(elze.substring(1));
 			}
 		}
 
@@ -1299,12 +1298,12 @@ public class Ddi3Helper {
 	}
 
 	private void cleanSequenceForDublicateCcRefs() throws DDIFtpException {
-		if (postCleanMainSeqItems.isEmpty()) {
+		if (postCleanSeqItems.isEmpty()) {
 			return;
 		}
-		String[] ccIds = new String[postCleanMainSeqItems.size()];
+		String[] ccIds = new String[postCleanSeqItems.size()];
 		int count = 0;
-		for (String pseudoVarId : postCleanMainSeqItems) {
+		for (String pseudoVarId : postCleanSeqItems) {
 			if (pseudoVarIdToCcIdMap.get(pseudoVarId) != null) {
 				ccIds[count] = pseudoVarIdToCcIdMap.get(pseudoVarId).getId();
 			} else {
@@ -1335,14 +1334,18 @@ public class Ddi3Helper {
 			}
 			count++;
 		}
-		for (Iterator<ReferenceType> iterator = mainSeq
-				.getControlConstructReferenceList().iterator(); iterator
+		for (Iterator<SequenceDocument> seqDocs = seqList.iterator(); seqDocs
 				.hasNext();) {
-			String id = iterator.next().getIDArray(0).getStringValue();
-			for (int i = 0; i < ccIds.length; i++) {
-				if (ccIds[i] != null && ccIds[i].equals(id)) {
-					iterator.remove();
-					break;
+			SequenceDocument seq = (SequenceDocument) seqDocs.next();
+			for (Iterator<ReferenceType> ref = seq.getSequence()
+					.getControlConstructReferenceList().iterator(); ref
+					.hasNext();) {
+				String id = ref.next().getIDArray(0).getStringValue();
+				for (int i = 0; i < ccIds.length; i++) {
+					if (ccIds[i] != null && ccIds[i].equals(id)) {
+						ref.remove();
+						break;
+					}
 				}
 			}
 		}
