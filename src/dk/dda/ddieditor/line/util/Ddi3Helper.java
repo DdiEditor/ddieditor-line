@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
@@ -49,7 +48,6 @@ import org.ddialliance.ddi3.xml.xmlbeans.reusable.AbstractVersionableType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.LabelType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NameType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NoteDocument;
-import org.ddialliance.ddi3.xml.xmlbeans.reusable.NoteType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NumericTypeCodeType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.ProgrammingLanguageCodeType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.ReferenceType;
@@ -364,17 +362,6 @@ public class Ddi3Helper {
 		UserIDType userId = result.addNewUserID();
 		userId.setType(Ddi3NamespaceHelper.QUEI_VAR_USER_ID_TYPE);
 		userId.setStringValue(pseudoVariableId);
-
-		// universe reference as note
-		if (univ != null) {
-			createQueiRefToUnivNote(
-					createLightXmlObject(ques.getQuestionScheme().getId(), ques
-							.getQuestionScheme().getVersion(), result.getId(),
-							result.getVersion()),
-					createLightXmlObject(unis.getUniverseScheme().getId(), unis
-							.getUniverseScheme().getVersion(), univ.getId(),
-							univ.getVersion()));
-		}
 
 		// set text
 		DynamicTextType dynamicText = result.addNewQuestionText();
@@ -1079,41 +1066,6 @@ public class Ddi3Helper {
 				controlConstruct.getId(), controlConstruct.getVersion());
 	}
 
-	/**
-	 * Create a processing note reflecting the relationship between a question
-	 * item and a universe
-	 * 
-	 * @param queiReference
-	 *            reference to the question item
-	 * @param univReference
-	 *            reference to the universe
-	 * @return note
-	 * @throws DDIFtpException
-	 */
-	public NoteDocument createQueiRefToUnivNote(
-			LightXmlObjectType queiReference, LightXmlObjectType univReference)
-			throws DDIFtpException {
-		NoteDocument doc = NoteDocument.Factory.newInstance();
-		NoteType type = doc.addNewNote();
-		addIdAndVersion(type, ElementType.NOTE.getIdPrefix(), null);
-		// processing
-		type.setType(org.ddialliance.ddi3.xml.xmlbeans.reusable.NoteTypeCodeType.Enum
-				.forInt(1));
-		// label
-		XmlBeansUtil.setTextOnMixedElement(type.addNewHeader(),
-				"Quei to univ relation");
-		// element reference
-		setReference(type.addNewRelationship().addNewRelatedToReference(),
-				queiReference.getParentId(), queiReference.getParentVersion(),
-				queiReference.getId(), queiReference.getVersion());
-
-		// note reference
-		XmlBeansUtil.setTextOnMixedElement(type.addNewContent(),
-				getLihtXmlObjectAsText(univReference));
-		noteList.add(doc);
-		return doc;
-	}
-
 	public String getLihtXmlObjectAsText(LightXmlObjectType lightXmlObject) {
 		StringBuilder result = new StringBuilder();
 		result.append("parentid__");
@@ -1211,7 +1163,6 @@ public class Ddi3Helper {
 		for (CategorySchemeDocument cats : catsList) {
 			postResolveCategorySchemeLabels(cats);
 		}
-		changeUnivRefOnQuei();
 		cleanSequenceForDublicateCcRefs();
 	}
 
@@ -1404,29 +1355,6 @@ public class Ddi3Helper {
 			ref = ModelAccessor.setReference(reference, newId);
 		}
 		return ref;
-	}
-
-	private void changeUnivRefOnQuei() throws DDIFtpException {
-		for (Entry<String, LightXmlObjectType> entry : pseudoVarIdToUnivIdMap
-				.entrySet()) {
-			for (QuestionSchemeDocument ques : quesList) {
-				for (QuestionItemType quei : ques.getQuestionScheme()
-						.getQuestionItemList()) {
-					if (!quei.getUserIDList().isEmpty()
-							&& quei.getUserIDArray(0).getStringValue()
-									.substring(1)
-									.equals(entry.getKey().substring(1))) {
-
-						// create new note
-						createQueiRefToUnivNote(
-								createLightXmlObject(ques.getQuestionScheme()
-										.getId(), ques.getQuestionScheme()
-										.getVersion(), quei.getId(),
-										quei.getVersion()), entry.getValue());
-					}
-				}
-			}
-		}
 	}
 
 	private void postResolveQueiReference(ReferenceType reference)
