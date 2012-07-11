@@ -7,6 +7,7 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.ddialliance.ddieditor.ui.model.DdiModelException;
 import org.ddialliance.ddieditor.ui.model.ElementType;
 import org.ddialliance.ddieditor.ui.model.instrument.ConditionalUtil;
 import org.ddialliance.ddiftp.util.DDIFtpException;
@@ -96,6 +97,7 @@ public class Wiki2Ddi3Scanner {
 	String compMatch = "''comp''";
 	String stateMatch = "''state''";
 	String ifThenElseMatch = "''ifthenelse''";
+	String intervMatch = "''interview''";
 
 	public List<String> errorList = new ArrayList<String>();
 
@@ -170,6 +172,14 @@ public class Wiki2Ddi3Scanner {
 		if (line.indexOf(stateMatch) > -1) {
 			if (create)
 				createStatementItem(line);
+			return;
+		}
+		if (line.indexOf(intervMatch) > -1) {
+			if (create)
+				createInterviewerInstruction(line);
+			else {
+				validateInterviewerInstruction(line);
+			}
 			return;
 		}
 		if (defineLine(line, mquePattern)) {
@@ -347,8 +357,8 @@ public class Wiki2Ddi3Scanner {
 	 * </ul>
 	 * 
 	 * @param line
-	 *            of ''ifthenelse'' v1>2||V1==10&&V2==10 v6 v2 How many
-	 *            times a day?
+	 *            of ''ifthenelse'' v1>2||V1==10&&V2==10 v6 v2 How many times a
+	 *            day?
 	 * @throws Exception
 	 */
 	private void createIfThenElse(String line, boolean create) throws Exception {
@@ -389,15 +399,21 @@ public class Wiki2Ddi3Scanner {
 			}
 
 			// else
-			if (params[3].equals("na")||params[3].equals("NA")) {
+			if (params[3].equals("na") || params[3].equals("NA")) {
 				params[3] = null;
 			} else if (variNamePattern.matcher(params[3]).find()) {
 				params[3] = "V" + params[3].substring(1);
 			}
 
 			if (create) {
-				ddi3Helper.createIfThenElse(params[1], params[2], params[3],
-						text.toString().trim());
+				try {
+					ddi3Helper.createIfThenElse(params[1], params[2],
+							params[3], text.toString().trim());
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					throw e;
+				}
 			}
 		} catch (Exception e) {
 			ddi3Helper.handleParseError(ElementType.IF_THEN_ELSE, Translator
@@ -415,6 +431,58 @@ public class Wiki2Ddi3Scanner {
 			ddi3Helper.handleParseError(ElementType.STATEMENT_ITEM,
 					Translator.trans("line.parse.errorstate", line));
 		}
+	}
+
+	private void createInterviewerInstruction(String line)
+			throws DDIFtpException {
+		String params[] = line.split(" ");
+		// check for multiple white spaces
+		for (String string : params) {
+			if (string.isEmpty()) {
+				ddi3Helper.handleParseError(ElementType.INSTRUCTION, Translator
+						.trans("line.parse.errorinterview",
+								new Object[] { line }));
+				return;
+			}
+		}
+
+		try {
+			int index = line.indexOf(intervMatch);
+			String result = line.substring(index + intervMatch.length());
+
+			// validate condition
+			String condition = validateInterviewerInstruction(line);
+			if (condition != null) {
+				int cIndex = result.indexOf(condition);
+				result = result.substring(0, cIndex - 1);
+				if (condition.equals("na") || condition.equals("NA")) {
+					condition = null;
+				}
+			}
+
+			// create
+			ddi3Helper.createInterviewerInstruction(result.trim(), condition);
+		} catch (Exception e) {
+			ddi3Helper.handleParseError(ElementType.INSTRUCTION,
+					Translator.trans("line.parse.errorstate", line));
+		}
+	}
+
+	private String validateInterviewerInstruction(String line)
+			throws DdiModelException {
+		String[] lineSplit = line.split(" ");
+		String condition = lineSplit[lineSplit.length - 1];
+
+		Matcher matcher = variNamePattern.matcher(condition);
+		if (matcher.find()) {
+			// check condition
+			ConditionalUtil.validateCondition(condition);
+			return condition;
+		}
+		if (condition.equals("na") || condition.equals("NA")) {
+			return condition;
+		}
+		return null;
 	}
 
 	private void createComputationItem(String line) throws Exception {

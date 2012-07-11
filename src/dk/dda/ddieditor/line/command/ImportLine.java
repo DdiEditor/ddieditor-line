@@ -286,6 +286,25 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			}
 		}
 
+		if (ddi3Helper.invs != null) {
+			DdiManager.getInstance().createElement(ddi3Helper.invs,
+					dataColLight.getId(),
+					dataColLight.getVersion(),
+					"datacollection__DataCollection",
+					// parent sub-elements
+					new String[] { "UserID", "VersionRationale",
+							"VersionResponsibility",
+							"DataCollectionModuleName", "Label", "Description",
+							"Coverage", "OtherMaterial", "Note",
+							"CollectionEvent" },
+					// stop elements
+					new String[] { "Instrument", "ProcessingEvent" },
+					// jump elements
+					new String[] { "Methodology", "QuestionScheme",
+							"ControlConstructScheme",
+							"InterviewerInstructionScheme" });
+		}
+
 		// notes
 		for (NoteDocument doc : ddi3Helper.getNotes()) {
 			DdiManager.getInstance().createElement(
@@ -457,7 +476,10 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 
 				// log report
 				Period p = new Period(System.currentTimeMillis() - b);
-				log.info(p.toString() + " - lines: " + ddi3Helper.getLineNo());
+				if (log.isInfoEnabled()) {
+					log.info(p.toString() + " - lines: "
+							+ ddi3Helper.getLineNo());
+				}
 			} catch (Exception e) {
 				Editor.showError(e, ID);
 			}

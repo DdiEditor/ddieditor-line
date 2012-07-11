@@ -3,7 +3,6 @@ package dk.dda.ddieditor.line.dialog;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 
@@ -21,6 +20,7 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
@@ -60,15 +60,21 @@ public class EditWikiSyntaxDialog extends Dialog {
 				Translator.trans("line.wikieditdialog.title"));
 		group.setLayoutData(new GridData(1000, 600));
 
+		// white space
+		Image image = new Image(parent.getDisplay(), 490, 1);
+		editor.createLabel(group, "").setImage(image);
+		editor.createLabel(group, "").setImage(image);
+		
 		// text input
 		Label markup = editor.createLabel(group,
 				Translator.trans("line.wikieditdialog.markup"));
 		markup.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false,
 				false, 1, 1));
+
 		Label edit = editor.createLabel(group,
 				Translator.trans("line.wikieditdialog.edit"));
 		edit.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false,
-				false, 1, 1));
+				false, 1, 1));		
 
 		// browser
 		final Browser browser = editor.createBrowser(group);

@@ -17,11 +17,15 @@ import org.ddialliance.ddi3.xml.xmlbeans.datacollection.CodeDomainDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.CodeDomainType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.ComputationItemDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.ComputationItemType;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.ConditionalTextDocument;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.ConditionalTextType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.ControlConstructSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.ControlConstructType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.DynamicTextType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.IfThenElseDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.IfThenElseType;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.InstructionType;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.InterviewerInstructionSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.LiteralTextDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.LiteralTextType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.MultipleQuestionItemDocument;
@@ -66,7 +70,6 @@ import org.ddialliance.ddieditor.model.namespace.ddi3.Ddi3NamespaceHelper;
 import org.ddialliance.ddieditor.ui.dbxml.code.CodeSchemeDao;
 import org.ddialliance.ddieditor.ui.dbxml.variable.VariableDao;
 import org.ddialliance.ddieditor.ui.model.ElementType;
-import org.ddialliance.ddieditor.ui.model.ModelAccessor;
 import org.ddialliance.ddieditor.ui.model.ModelIdentifingType;
 import org.ddialliance.ddieditor.ui.model.code.CodeScheme;
 import org.ddialliance.ddieditor.ui.model.instrument.ComputationItem;
@@ -127,6 +130,8 @@ public class Ddi3Helper {
 	public ControlConstructSchemeDocument cocs;
 	public boolean cocsIsNew = false;
 	public SequenceType mainSeq;
+	public InterviewerInstructionSchemeDocument invs = null;
+	private List<LightXmlObjectType> instructionList = new ArrayList<LightXmlObjectType>();
 	CodeSchemeDao codeSchemedao;
 	VariableDao variabledao;
 	private List<LightXmlObjectType> vars = null;
@@ -190,6 +195,7 @@ public class Ddi3Helper {
 			cocsDoc.addNewControlConstructScheme();
 			addIdAndVersion(cocsDoc.getControlConstructScheme(),
 					ElementType.CONTROL_CONSTRUCT_SCHEME.getIdPrefix(), null);
+
 			cocsList.add(cocsDoc);
 			cocs = cocsDoc;
 			cocsIsNew = true;
@@ -206,6 +212,18 @@ public class Ddi3Helper {
 					SequenceType.type);
 			setText(mainSeq.addNewLabel(), "Main sequence");
 			addIdAndVersion(mainSeq, ElementType.SEQUENCE.getIdPrefix(), null);
+		}
+
+		// interviewer instruction scheme
+		if (invs == null) {
+			invs = InterviewerInstructionSchemeDocument.Factory.newInstance();
+			invs.addNewInterviewerInstructionScheme();
+			IdentificationManager.getInstance().addIdentification(
+					invs.getInterviewerInstructionScheme(),
+					ElementType.INTERVIEWER_INSTRUCTION_SCHEME.getIdPrefix(),
+					null);
+			IdentificationManager.getInstance().addVersionInformation(
+					invs.getInterviewerInstructionScheme(), null, null);
 		}
 
 		// variables
@@ -227,16 +245,15 @@ public class Ddi3Helper {
 			setText(result.addNewHumanReadable(), description);
 		univ = result;
 	}
-	
+
 	// ==sequence-id==sequence label
 	public void createSequence(String pseudoId, String label)
 			throws DDIFtpException {
-		SequenceDocument result = SequenceDocument.Factory
-				.newInstance();
+		SequenceDocument result = SequenceDocument.Factory.newInstance();
 		result.addNewSequence();
 		addIdAndVersion(result.getSequence(),
 				ElementType.SEQUENCE.getIdPrefix(), null);
-		
+
 		// pseudoSequenceId
 		UserIDType userId = result.getSequence().addNewUserID();
 		userId.setType(Ddi3NamespaceHelper.SEQ_USER_ID_TYPE);
@@ -463,6 +480,9 @@ public class Ddi3Helper {
 		setReference(questionConstruct.addNewQuestionReference(), parentId,
 				parentVersion, id, version);
 
+		// add interview instruction ref
+		addInterviewerInstructions(questionConstruct);
+		
 		// add cc ref to seq
 		addControlConstructToSequence(questionConstruct);
 
@@ -480,7 +500,7 @@ public class Ddi3Helper {
 
 		// concept ref
 		if (conc != null) {
-			ModelAccessor.setReference(
+			IdentificationManager.getInstance().addReferenceInformation(
 					type.addNewConceptReference(),
 					createLightXmlObject(null, null, conc.getId(),
 							conc.getVersion()));
@@ -581,8 +601,14 @@ public class Ddi3Helper {
 
 		// add cate
 		try {
-			cods.getCodes().get(catIndex).addNewCategoryReference().addNewID()
-					.setStringValue(cat.getId());
+			IdentificationManager.getInstance().addReferenceInformation(
+					cods.getCodes().get(catIndex).addNewCategoryReference(),
+					LightXmlObjectUtil.createLightXmlObject(cats
+							.getCategoryScheme().getAgency(), cats
+							.getCategoryScheme().getId(), cats
+							.getCategoryScheme().getVersion(), cat.getId(), cat
+							.getVersion(), ElementType.CATEGORY
+							.getElementName()));
 		} catch (IndexOutOfBoundsException e) {
 			handleParseError(ElementType.CATEGORY, Translator.trans(
 					"line.error.nocodetocategory", new Object[] { text,
@@ -591,43 +617,48 @@ public class Ddi3Helper {
 		}
 	}
 
-	public void reuseCategories(String varId) throws DDIFtpException {
-		// identification
+	/**
+	 * Reuse referred category scheme
+	 * 
+	 * @param reuseVarId
+	 *            variable id where category scheme were defined
+	 * @throws DDIFtpException
+	 */
+	public void reuseCategories(String reuseVarId) throws DDIFtpException {
+		// cods to set
 		UserIDType pseudoVariableId = getPseudoVariableId();
 		String queiName = getQuestionItemName();
-		String text = Translator.trans("line.category.textrefered", varId);
-		resolveCodeScheme(text, pseudoVariableId.getStringValue(), queiName);
+		String errorText = Translator.trans("line.category.textrefered",
+				reuseVarId);
+		resolveCodeScheme(errorText, pseudoVariableId.getStringValue(),
+				queiName);
 
-		// cats
-		CustomType cus = getValueRepresentation(varId.toUpperCase());
-		LightXmlObjectListDocument list = null;
+		// resolve cods to reuse
+		String reuseCodsId = XmlBeansUtil
+				.getTextOnMixedElement(getValueRepresentation(reuseVarId
+						.toUpperCase()));
 		CodeScheme reuseCods = null;
-		ReferenceResolution refResolv = null;
 		try {
-			// resolve reference
-			list = DdiManager.getInstance().getCodeSchemesLight(
-					XmlBeansUtil.getTextOnMixedElement(cus), null, null, null);
-			if (list == null
-					|| list.getLightXmlObjectList().sizeOfLightXmlObjectArray() != 1) {
+			// lookup reuse cods
+			LightXmlObjectListDocument codsList = DdiManager.getInstance()
+					.getCodeSchemesLight(reuseCodsId, null, null, null);
+			if (codsList == null
+					|| codsList.getLightXmlObjectList()
+							.sizeOfLightXmlObjectArray() != 1) {
 				handleParseError(ElementType.CATEGORY, Translator.trans(
-						"line.error.codscatUnexpect", new Object[] { text,
+						"line.error.codscatUnexpect", new Object[] { errorText,
 								pseudoVariableId, queiName }));
 				return;
 			}
-			String version = XmlBeansUtil.getXmlAttributeValue(list
-					.getLightXmlObjectList().xmlText(), "version=\"");
-			String parentId = XmlBeansUtil.getXmlAttributeValue(list
-					.getLightXmlObjectList().xmlText(), "parentId=\"");
-			String parentVersion = XmlBeansUtil.getXmlAttributeValue(list
-					.getLightXmlObjectList().xmlText(), "parentVersion=\"");
-			reuseCods = (CodeScheme) codeSchemedao.getModel(
-					XmlBeansUtil.getTextOnMixedElement(cus), version, parentId,
-					parentVersion);
+			LightXmlObjectType reuseCodsLight = codsList
+					.getLightXmlObjectList().getLightXmlObjectArray(0);
+			reuseCods = (CodeScheme) codeSchemedao.getModel(reuseCodsId,
+					reuseCodsLight.getVersion(), reuseCodsLight.getParentId(),
+					reuseCodsLight.getParentVersion());
 
-			refResolv = new ReferenceResolution(
+			// find reuse cods ref cats in this.catsList
+			ReferenceResolution refResolv = new ReferenceResolution(
 					reuseCods.getCategorySchemeReference());
-
-			// retrieve reference
 			for (CategorySchemeDocument catsTmp : catsList) {
 				if (catsTmp.getCategoryScheme().getId()
 						.equals(refResolv.getId())) {
@@ -635,6 +666,8 @@ public class Ddi3Helper {
 					break;
 				}
 			}
+
+			// guard lookup cods ref cats
 			if (cats == null) {
 				LightXmlObjectListType lightCatsList = DdiManager
 						.getInstance()
@@ -654,22 +687,18 @@ public class Ddi3Helper {
 		} catch (Exception e) {
 			throw new DDIFtpException(e.getMessage(), e);
 		}
-		if (cats == null) {
+		if (cats == null) { // guard
 			handleParseError(ElementType.CATEGORY, Translator.trans(
-					"line.error.nocodetocategory", new Object[] { text,
+					"line.error.nocodetocategory", new Object[] { errorText,
 							queiName, pseudoVariableId.getStringValue() }));
 			return;
 		}
 
 		// set default cats on cods
-		try {
-			cods.getDocument()
-					.getCodeScheme()
-					.setCategorySchemeReference(
-							reuseCods.getCategorySchemeReference());
-		} catch (Exception e) {
-			throw new DDIFtpException(e.getMessage(), e);
-		}
+		cods.getDocument()
+				.getCodeScheme()
+				.setCategorySchemeReference(
+						reuseCods.getCategorySchemeReference());
 
 		// set cate on code
 		int count = 0;
@@ -677,15 +706,22 @@ public class Ddi3Helper {
 				.hasNext(); count++) {
 			CodeType code = iterator.next();
 			try {
-				code.addNewCategoryReference()
-						.addNewID()
-						.setStringValue(
+				IdentificationManager.getInstance().addReferenceInformation(
+						code.addNewCategoryReference(),
+						LightXmlObjectUtil.createLightXmlObject(
+								cats.getCategoryScheme().getAgency(),
+								cats.getCategoryScheme().getId(),
+								cats.getCategoryScheme().getVersion(),
 								cats.getCategoryScheme().getCategoryList()
-										.get(count).getId());
+										.get(count).getId(), cats
+										.getCategoryScheme().getCategoryList()
+										.get(count).getVersion(),
+								ElementType.CATEGORY_SCHEME.getElementName()));
 			} catch (IndexOutOfBoundsException e) {
 				handleParseError(ElementType.CATEGORY, Translator.trans(
-						"line.error.nocodetocategory", new Object[] { text,
-								queiName, pseudoVariableId.getStringValue() }));
+						"line.error.nocodetocategory",
+						new Object[] { errorText, queiName,
+								pseudoVariableId.getStringValue() }));
 				return;
 			}
 		}
@@ -781,9 +817,14 @@ public class Ddi3Helper {
 
 		// add default cats
 		if (cods.getCategorySchemeReference() == null) {
-			cods.getDocument().getCodeScheme().addNewCategorySchemeReference()
-					.addNewID()
-					.setStringValue(cats.getCategoryScheme().getId());
+			IdentificationManager.getInstance().addReferenceInformation(
+					cods.getDocument().getCodeScheme()
+							.addNewCategorySchemeReference(),
+					LightXmlObjectUtil.createLightXmlObject(cats
+							.getCategoryScheme().getAgency(), null, null, cats
+							.getCategoryScheme().getId(), cats
+							.getCategoryScheme().getVersion(),
+							ElementType.CATEGORY_SCHEME.getElementName()));
 		}
 
 		// cods update
@@ -819,9 +860,10 @@ public class Ddi3Helper {
 
 		// set text
 		DynamicTextType dynamicText = stai.addNewDisplayText();
-		TextType textType = dynamicText.addNewText();
 		XmlBeansUtil.addTranslationAttributes(dynamicText,
 				Translator.getLocaleLanguage(), false, true);
+
+		TextType textType = dynamicText.addNewText();
 		LiteralTextType lTextType = (LiteralTextType) textType.substitute(
 				LiteralTextDocument.type.getDocumentElementName(),
 				LiteralTextType.type);
@@ -829,11 +871,69 @@ public class Ddi3Helper {
 		XmlBeansUtil.setTextOnMixedElement(lTextType.getText(), statementText);
 
 		// ref statement item
-		ModelAccessor.setReference(
+		IdentificationManager.getInstance().addReferenceInformation(
 				seq.addNewControlConstructReference(),
 				createLightXmlObject(cocs.getControlConstructScheme().getId(),
 						cocs.getControlConstructScheme().getVersion(),
 						stai.getId(), stai.getVersion()));
+	}
+
+	public void createInterviewerInstruction(String text, String condition)
+			throws DDIFtpException {
+		// create interviewer instruction
+		InstructionType intv = invs.getInterviewerInstructionScheme()
+				.addNewInstruction();
+		IdentificationManager.getInstance().addIdentification(intv,
+				ElementType.INSTRUCTION.getIdPrefix(), null);
+		IdentificationManager.getInstance().addVersionInformation(intv, null,
+				null);
+
+		// label
+		LabelType labelType = intv.addNewLabel();
+		XmlBeansUtil.addTranslationAttributes(labelType,
+				DdiEditorConfig.get(DdiEditorConfig.DDI_LANGUAGE), false, true);
+		XmlBeansUtil.setTextOnMixedElement(labelType, getLabelText(text));
+
+		// set text
+		DynamicTextType dText = intv.addNewInstructionText();
+		XmlBeansUtil.addTranslationAttributes(dText,
+				DdiEditorConfig.get(DdiEditorConfig.DDI_LANGUAGE), false, true);
+		TextType aTextType = dText.addNewText();
+		LiteralTextType lTextType = (LiteralTextType) aTextType.substitute(
+				LiteralTextDocument.type.getDocumentElementName(),
+				LiteralTextType.type);
+		XmlBeansUtil.setTextOnMixedElement(lTextType.addNewText(), text);
+
+		// condition
+		if (condition != null) {
+			TextType bTextType = dText.addNewText();
+			ConditionalTextType cTextType = (ConditionalTextType) bTextType
+					.substitute(ConditionalTextDocument.type
+							.getDocumentElementName(), ConditionalTextType.type);
+
+			ProgrammingLanguageCodeType code = cTextType.addNewExpression()
+					.addNewCode();
+			code.setProgrammingLanguage(DdiEditorConfig
+					.get(DdiEditorConfig.DDI_INSTRUMENT_PROGRAM_LANG));
+			code.setStringValue(condition);
+		}
+
+		// add for inclusion in other control constructs
+		instructionList.add(LightXmlObjectUtil.createLightXmlObject(invs
+				.getInterviewerInstructionScheme().getAgency(), invs
+				.getInterviewerInstructionScheme().getId(), invs
+				.getInterviewerInstructionScheme().getVersion(), intv.getId(),
+				intv.getVersion(), ElementType.INTERVIEWER_INSTRUCTION_SCHEME
+						.getElementName()));
+	}
+
+	private void addInterviewerInstructions(ControlConstructType cc)
+			throws DDIFtpException {
+		for (LightXmlObjectType intvLight : instructionList) {
+			IdentificationManager.getInstance().addReferenceInformation(
+					cc.addNewInterviewerInstructionReference(), intvLight);
+		}
+		instructionList.clear();
 	}
 
 	public void createComputationItem(String condition, String variref,
@@ -860,8 +960,7 @@ public class Ddi3Helper {
 		model.applyChange(createLightXmlObject("", "", variref, ""),
 				ModelIdentifingType.Type_B.class);
 		postResolveItemRefs.add(model.getDocument().getComputationItem());
-		addControlConstructToSequence(model.getDocument()
-				.getComputationItem());
+		addControlConstructToSequence(model.getDocument().getComputationItem());
 	}
 
 	private ComputationItem getComputationItemModel(ComputationItemType comp)
@@ -948,7 +1047,7 @@ public class Ddi3Helper {
 					.getVersion(), univ.getId(), univ.getVersion());
 			pseudoVarIdToUnivIdMap.put(then, univLight);
 			updateVariableUniverseReference(then, univLight);
-		
+
 			// create sub-sequence
 			seq = (SequenceType) cocs
 					.getControlConstructScheme()
@@ -972,11 +1071,11 @@ public class Ddi3Helper {
 			createStatementItem(statementText, seq);
 
 			// ref. next question item
-			ModelAccessor.setReference(
+			IdentificationManager.getInstance().addReferenceInformation(
 					seq.addNewControlConstructReference(),
 					createLightXmlObject(cocs.getControlConstructScheme()
 							.getId(), cocs.getControlConstructScheme()
-							.getVersion(), then, null));
+							.getVersion(), then, "1.0.0"));
 			postResolveItemRefs.add(seq);
 		}
 
@@ -1014,15 +1113,14 @@ public class Ddi3Helper {
 		if (then.indexOf("V") == 0) {
 			// question ref.
 			model.applyChange(
-					createLightXmlObject(cocs.getControlConstructScheme().getId(),
-							cocs.getControlConstructScheme().getVersion(),
-							seq.getId(), seq.getVersion()),
+					createLightXmlObject(cocs.getControlConstructScheme()
+							.getId(), cocs.getControlConstructScheme()
+							.getVersion(), seq.getId(), seq.getVersion()),
 					ModelIdentifingType.Type_C.class);
 			postCleanSeqItems.add(then.substring(1));
 		} else {
 			// sequence ref.
-			model.applyChange(
-					createLightXmlObject(null, null, then, null),
+			model.applyChange(createLightXmlObject(null, null, then, null),
 					ModelIdentifingType.Type_C.class);
 		}
 
@@ -1052,17 +1150,16 @@ public class Ddi3Helper {
 	}
 
 	private void addControlConstructToSequence(
-			ControlConstructType controlConstruct) {
+			ControlConstructType controlConstruct) throws DDIFtpException {
 		SequenceType seq = null;
 		if (curSubSeq != null) {
 			seq = curSubSeq.getSequence();
 		} else {
 			seq = mainSeq;
 		}
-		setReference(
-				seq.addNewControlConstructReference(),
-				cocs.getControlConstructScheme().getId(), cocs
-						.getControlConstructScheme().getVersion(),
+		setReference(seq.addNewControlConstructReference(), cocs
+				.getControlConstructScheme().getId(), cocs
+				.getControlConstructScheme().getVersion(),
 				controlConstruct.getId(), controlConstruct.getVersion());
 	}
 
@@ -1092,8 +1189,9 @@ public class Ddi3Helper {
 	}
 
 	private void setReference(ReferenceType ref, String parentId,
-			String parentVersion, String id, String version) {
-		ModelAccessor.setReference(ref,
+			String parentVersion, String id, String version)
+			throws DDIFtpException {
+		IdentificationManager.getInstance().addReferenceInformation(ref,
 				createLightXmlObject(parentId, parentVersion, id, version));
 	}
 
@@ -1174,7 +1272,7 @@ public class Ddi3Helper {
 			if (xmlobject instanceof SequenceType) {
 				SequenceType xml = (SequenceType) xmlobject;
 				for (ReferenceType ref : xml.getControlConstructReferenceList()) {
-					changeCcReference(ref);  
+					changeCcReference(ref);
 				}
 			}
 			// if then else
@@ -1230,6 +1328,12 @@ public class Ddi3Helper {
 		}
 	}
 
+	/**
+	 * Pseudo singleton does only query once
+	 * 
+	 * @return list of light variables
+	 * @throws DDIFtpException
+	 */
 	private List<LightXmlObjectType> getVariablesLight() throws DDIFtpException {
 		if (vars == null) {
 			vars = new ArrayList<LightXmlObjectType>();
@@ -1348,11 +1452,12 @@ public class Ddi3Helper {
 					newId = LightXmlObjectType.Factory.newInstance();
 					newId.setId(seqDoc.getSequence().getId());
 					newId.setVersion(seqDoc.getSequence().getVersion());
-				} 
+				}
 			}
 		}
 		if (newId != null) {
-			ref = ModelAccessor.setReference(reference, newId);
+			ref = IdentificationManager.getInstance().addReferenceInformation(
+					reference, newId);
 		}
 		return ref;
 	}
@@ -1371,12 +1476,13 @@ public class Ddi3Helper {
 				if (!quei.getUserIDList().isEmpty()
 						&& quei.getUserIDArray(0).getStringValue().substring(1)
 								.equals(id.substring(1))) {
-					ModelAccessor.setReference(
-							reference,
-							createLightXmlObject(ques.getQuestionScheme()
-									.getId(), ques.getQuestionScheme()
-									.getVersion(), quei.getId(), quei
-									.getVersion()));
+					IdentificationManager.getInstance()
+							.addReferenceInformation(
+									reference,
+									createLightXmlObject(ques
+											.getQuestionScheme().getId(), ques
+											.getQuestionScheme().getVersion(),
+											quei.getId(), quei.getVersion()));
 
 					break;
 				}
@@ -1395,8 +1501,8 @@ public class Ddi3Helper {
 					if (userIdCus.getValue() != null
 							&& userIdCus.getValue().toLowerCase().equals(id)) {
 						// set reference
-						ModelAccessor
-								.setReference(
+						IdentificationManager.getInstance()
+								.addReferenceInformation(
 										reference,
 										createLightXmlObject(
 												queiPlus.getParentId(),
@@ -1536,7 +1642,7 @@ public class Ddi3Helper {
 		listToString(cocsList);
 	}
 
-	private void listToString(List list) {
+	private void listToString(List<?> list) {
 		for (Object doc : list) {
 			log.debug(((XmlObject) doc).xmlText(xmlOptions));
 		}

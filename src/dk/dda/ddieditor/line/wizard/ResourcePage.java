@@ -8,6 +8,7 @@ import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
 import org.ddialliance.ddieditor.ui.editor.Editor;
 import org.ddialliance.ddieditor.ui.editor.widgetutil.referenceselection.ReferenceSelectionCombo;
+import org.ddialliance.ddieditor.ui.model.ElementType;
 import org.ddialliance.ddiftp.util.Translator;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.custom.BusyIndicator;
@@ -69,7 +70,7 @@ public class ResourcePage extends WizardPage {
 				uniRefSelectCombo = editor.createRefSelection(group,
 						Translator.trans("VariableEditor.label.universeref"),
 						Translator.trans("VariableEditor.label.universeref"),
-						ReferenceType.Factory.newInstance(), uniRefList, false);
+						ReferenceType.Factory.newInstance(), uniRefList, false, ElementType.UNIVERSE);
 				uniRefSelectCombo.addSelectionListener(
 						Translator.trans("VariableEditor.label.universeref"),
 						null);
@@ -105,7 +106,7 @@ public class ResourcePage extends WizardPage {
 						Translator.trans("VariableEditor.label.conceptref"),
 						Translator.trans("VariableEditor.label.conceptref"),
 						ReferenceType.Factory.newInstance(), conceptRefList,
-						false);
+						false, ElementType.CONCEPT);
 				conRefSelectCombo.addSelectionListener(
 						Translator.trans("VariableEditor.label.conceptref"),
 						null);
@@ -140,7 +141,7 @@ public class ResourcePage extends WizardPage {
 						Translator.trans("line.wizard.refpage.ques"),
 						Translator.trans("line.wizard.refpage.ques"),
 						ReferenceType.Factory.newInstance(),
-						questionSchemeRefList, false);
+						questionSchemeRefList, false, ElementType.QUESTION_SCHEME);
 				quesRefSelectCombo.addSelectionListener(
 						Translator.trans("line.wizard.refpage.ques"), null);
 
@@ -156,7 +157,7 @@ public class ResourcePage extends WizardPage {
 				seqRefSelectCombo = editor.createRefSelection(group,
 						Translator.trans("line.wizard.refpage.mainseqref"),
 						Translator.trans("line.wizard.refpage.mainseqref"),
-						ReferenceType.Factory.newInstance(), seqRefList, false);
+						ReferenceType.Factory.newInstance(), seqRefList, false, ElementType.SEQUENCE);
 
 				seqRefSelectCombo.addSelectionListener(
 						Translator.trans("line.wizard.refpage.mainseqref"),
