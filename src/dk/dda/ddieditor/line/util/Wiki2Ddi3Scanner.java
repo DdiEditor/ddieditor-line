@@ -98,6 +98,7 @@ public class Wiki2Ddi3Scanner {
 	String stateMatch = "''state''";
 	String ifThenElseMatch = "''ifthenelse''";
 	String intervMatch = "''interview''";
+	String catsRpMatch = "**cats_";
 
 	public List<String> errorList = new ArrayList<String>();
 
@@ -144,8 +145,13 @@ public class Wiki2Ddi3Scanner {
 			return;
 		}
 		if (defineLine(line, catePattern)) {
-			if (create)
+			if (create) {
+				if (line.indexOf(catsRpMatch) > -1) {
+					useRPCategory(line);
+					return;
+				}
 				createCategory(line);
+			}
 			return;
 		}
 		if (defineLine(line, queiPattern)) {
@@ -345,6 +351,16 @@ public class Wiki2Ddi3Scanner {
 		}
 	}
 
+	private void useRPCategory(String line) throws DDIFtpException {
+		Matcher matcher = catePattern.matcher(line);
+		if (matcher.find()) {
+			int index = matcher.end();
+			String catLine = line.substring(index).trim();
+
+			// reuse RP categories
+			ddi3Helper.useRPCategories(catLine);
+		}
+	}
 	/**
 	 * Create if then else control construct<br>
 	 * When creating an if then else control construct the following ddi3

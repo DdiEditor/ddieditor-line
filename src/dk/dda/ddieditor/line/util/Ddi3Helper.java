@@ -44,6 +44,7 @@ import org.ddialliance.ddi3.xml.xmlbeans.datacollection.StatementItemType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.TextType;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategorySchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategoryType;
+import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CodeSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CodeType;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.VariableDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.AbstractIdentifiableType;
@@ -66,7 +67,10 @@ import org.ddialliance.ddieditor.model.lightxmlobject.CustomType;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectListDocument;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectListType;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
+import org.ddialliance.ddieditor.model.lightxmlobject.impl.LabelTypeImpl;
 import org.ddialliance.ddieditor.model.namespace.ddi3.Ddi3NamespaceHelper;
+import org.ddialliance.ddieditor.model.resource.DDIResourceType;
+import org.ddialliance.ddieditor.persistenceaccess.PersistenceManager;
 import org.ddialliance.ddieditor.ui.dbxml.code.CodeSchemeDao;
 import org.ddialliance.ddieditor.ui.dbxml.variable.VariableDao;
 import org.ddialliance.ddieditor.ui.model.ElementType;
@@ -482,7 +486,7 @@ public class Ddi3Helper {
 
 		// add interview instruction ref
 		addInterviewerInstructions(questionConstruct);
-		
+
 		// add cc ref to seq
 		addControlConstructToSequence(questionConstruct);
 
@@ -725,6 +729,144 @@ public class Ddi3Helper {
 				return;
 			}
 		}
+	}
+
+	public static CodeSchemeDocument getRPCodeSchemeByReference(
+			ReferenceResolution refRes) throws Exception {
+		CodeSchemeDocument result = null;
+
+		List<DDIResourceType> resources = PersistenceManager.getInstance()
+				.getResources();
+		String workingresource = PersistenceManager.getInstance()
+				.getWorkingResource();
+
+		for (DDIResourceType resource : resources) {
+			if (!resource.equals(workingresource)) {
+				PersistenceManager.getInstance().setWorkingResource(
+						resource.getOrgName());
+				List<LightXmlObjectType> codeSchemeRefList = DdiManager
+						.getInstance()
+						.getCodeSchemesLight(null, null, null, null)
+						.getLightXmlObjectList().getLightXmlObjectList();
+				for (LightXmlObjectType lightXmlObject : codeSchemeRefList) {
+					if (lightXmlObject.getId().equals(refRes.getId())) {
+						result = DdiManager.getInstance().getCodeScheme(
+								lightXmlObject.getId(),
+								lightXmlObject.getVersion(),
+								lightXmlObject.getParentId(),
+								lightXmlObject.getParentVersion());
+						break;
+					}
+				}
+				if (result != null) {
+					break;
+				}
+			}
+		}
+
+		PersistenceManager.getInstance().setWorkingResource(workingresource);
+		return result;
+	}
+
+	private static CategorySchemeDocument getRPCategorySchemeByLabel(String refRes)
+			throws Exception {
+		List<LightXmlObjectType> categorySchemeRefList = DdiManager
+				.getInstance().getCategorySchemesLight(null, null, null, null)
+				.getLightXmlObjectList().getLightXmlObjectList();
+		CategorySchemeDocument result = null;
+		for (LightXmlObjectType lightXmlObject : categorySchemeRefList) {
+			LabelTypeImpl labelType = (LabelTypeImpl) XmlBeansUtil
+					.getDefaultLangElement(lightXmlObject.getLabelList());
+			String label = XmlBeansUtil.getTextOnMixedElement(labelType);
+			if (label.equals(refRes)) { 
+				result = DdiManager.getInstance().getRPCategoryScheme(
+						lightXmlObject.getId(), lightXmlObject.getVersion(),
+						lightXmlObject.getParentId(),
+						lightXmlObject.getParentVersion());
+				break;
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Reuse referred RP category scheme
+	 * 
+	 * @param reuseVarId
+	 *            variable id where category scheme were defined
+	 * @throws DDIFtpException
+	 */
+	public void useRPCategories(String reuseCodsId) throws DDIFtpException {
+
+		// set cods
+		UserIDType pseudoVariableId = getPseudoVariableId();
+		String queiName = getQuestionItemName();
+		String errorText = Translator.trans("line.category.textrefered",
+				reuseCodsId);
+		resolveCodeScheme(errorText, pseudoVariableId.getStringValue(),
+				queiName);
+
+		CategorySchemeDocument result = null;
+
+		List<DDIResourceType> resources = PersistenceManager.getInstance()
+				.getResources();
+		String workingresource = PersistenceManager.getInstance()
+				.getWorkingResource();
+
+		for (DDIResourceType resource : resources) {
+			if (!resource.getOrgName().equals(workingresource)) {
+				PersistenceManager.getInstance().setWorkingResource(
+						resource.getOrgName());
+				try {
+					result = getRPCategorySchemeByLabel(reuseCodsId);
+				} catch (Exception e) {
+					handleParseError(ElementType.CATEGORY, Translator.trans(
+							"line.error.rpcategoryerror",
+							new Object[] { reuseCodsId, queiName,
+									pseudoVariableId.getStringValue() },
+							e.getMessage()));
+					return;
+				}
+				if (result != null) {
+					break;
+				}
+			}
+		}
+		if (result == null) {
+			handleParseError(ElementType.CATEGORY, Translator.trans(
+					"line.error.norpcategoryfound", new Object[] { reuseCodsId,
+							queiName, pseudoVariableId.getStringValue() }));
+			return;
+		}
+		cats = result;
+
+		// set cate on code
+		int count = 0;
+		for (Iterator<CodeType> iterator = cods.getCodes().iterator(); iterator
+				.hasNext(); count++) {
+			CodeType code = iterator.next();
+			try {
+				IdentificationManager.getInstance().addReferenceInformation(
+						code.addNewCategoryReference(),
+						LightXmlObjectUtil.createLightXmlObject(
+								cats.getCategoryScheme().getAgency(),
+								cats.getCategoryScheme().getId(),
+								cats.getCategoryScheme().getVersion(),
+								cats.getCategoryScheme().getCategoryList()
+										.get(count).getId(), cats
+										.getCategoryScheme().getCategoryList()
+										.get(count).getVersion(),
+								ElementType.CATEGORY_SCHEME.getElementName()));
+			} catch (IndexOutOfBoundsException e) {
+				handleParseError(ElementType.CATEGORY, Translator.trans(
+						"line.error.nocodetocategory",
+						new Object[] { errorText, queiName,
+								pseudoVariableId.getStringValue() }));
+				return;
+			}
+		}
+
+		PersistenceManager.getInstance().setWorkingResource(workingresource);
 	}
 
 	private void resolveCodeScheme(String text, String pseudoVariableId,

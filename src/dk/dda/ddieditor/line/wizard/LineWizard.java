@@ -52,6 +52,7 @@ import dk.dda.ddieditor.line.util.Wiki2Ddi3Scanner;
 
 public class LineWizard extends Wizard {
 	static Ddi3Helper ddi3Helper;
+//	String initialResource = null;
 
 	public LineWizard(Ddi3Helper ddi3Helper) {
 		super();
@@ -69,12 +70,12 @@ public class LineWizard extends Wizard {
 	}
 
 	public ResourcePage resourcePage = new ResourcePage();
-
+	public ParsePage pargePage = new ParsePage();
 	@Override
 	public void addPages() {
 		addPage(resourcePage);
 		addPage(new WikiPage());
-		addPage(new ParsePage());
+		addPage(pargePage);
 	}
 
 	boolean checkRefSelection(LightXmlObjectType lightXmlObject) {
@@ -86,6 +87,14 @@ public class LineWizard extends Wizard {
 
 	public boolean performFinish() {
 		try {
+			// switch to selected load resource
+			if (pargePage.resourceSelectionLister != null) {
+				// more than one resource loaded
+				DDIResourceType selectedLoadResource = pargePage.resourceSelectionLister
+						.getSelectedResource();
+				PersistenceManager.getInstance().setWorkingResource(
+						selectedLoadResource.getOrgName());
+			}
 			// clean up problem view
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 			IMarker[] markers = root.findMarkers(IMarker.TEXT, false,
@@ -327,6 +336,10 @@ class ResourceSelectionLister implements SelectionListener {
 	public void widgetDefaultSelected(SelectionEvent e) {
 		// do nothing
 	}
+	
+	public DDIResourceType getSelectedResource() {
+		return selectedResource;
+	}
 }
 
 class WikiPage extends WizardPage {
@@ -510,6 +523,7 @@ class ParsePage extends WizardPage {
 		}
 		editor.createLabel(group, Translator.trans("line.resource.select"));
 		Combo combo = editor.createCombo(group, options);
+		// resource selection
 		if (options.length == 1) {
 			combo.select(0);
 			setPageComplete(true);

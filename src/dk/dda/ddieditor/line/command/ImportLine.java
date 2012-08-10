@@ -208,7 +208,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 		}
 
 		// questions
-		createQuestionScheme(ddi3Helper, false, dataColLight.getId(),
+		createQuestionScheme(ddi3Helper, true, dataColLight.getId(),
 				dataColLight.getVersion());
 
 		// multiple question
@@ -441,6 +441,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 	 */
 	class ImportDdiQuestionsRunnable implements IRunnableWithProgress {
 		Ddi3Helper ddi3Helper;
+		String initialResource = null;
 
 		ImportDdiQuestionsRunnable(Ddi3Helper ddi3Helper) {
 			this.ddi3Helper = ddi3Helper;
@@ -450,6 +451,8 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 		public void run(IProgressMonitor monitor)
 				throws InvocationTargetException, InterruptedException {
 			try {
+				initialResource = PersistenceManager.getInstance()
+						.getWorkingResource();
 				// yes - no for errors
 				IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 				IMarker[] markers = root.findMarkers(IMarker.TEXT, false,
@@ -482,6 +485,15 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 				}
 			} catch (Exception e) {
 				Editor.showError(e, ID);
+			} finally {
+				// restore initial resource
+				try {
+					PersistenceManager.getInstance().setWorkingResource(
+							initialResource);
+				} catch (DDIFtpException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 	}
