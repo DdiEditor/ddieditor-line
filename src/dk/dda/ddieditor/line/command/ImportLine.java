@@ -208,7 +208,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 		}
 
 		// questions
-		createQuestionScheme(ddi3Helper, true, dataColLight.getId(),
+		createQuestionScheme(ddi3Helper, false, dataColLight.getId(),
 				dataColLight.getVersion());
 
 		// multiple question

@@ -605,14 +605,16 @@ public class Ddi3Helper {
 
 		// add cate
 		try {
-			IdentificationManager.getInstance().addReferenceInformation(
-					cods.getCodes().get(catIndex).addNewCategoryReference(),
-					LightXmlObjectUtil.createLightXmlObject(cats
-							.getCategoryScheme().getAgency(), cats
-							.getCategoryScheme().getId(), cats
-							.getCategoryScheme().getVersion(), cat.getId(), cat
-							.getVersion(), ElementType.CATEGORY
-							.getElementName()));
+			if (cods != null) {
+				IdentificationManager.getInstance().addReferenceInformation(
+						cods.getCodes().get(catIndex).addNewCategoryReference(),
+						LightXmlObjectUtil.createLightXmlObject(cats
+								.getCategoryScheme().getAgency(), cats
+								.getCategoryScheme().getId(), cats
+								.getCategoryScheme().getVersion(), cat.getId(), cat
+								.getVersion(), ElementType.CATEGORY
+								.getElementName()));
+			}
 		} catch (IndexOutOfBoundsException e) {
 			handleParseError(ElementType.CATEGORY, Translator.trans(
 					"line.error.nocodetocategory", new Object[] { text,
