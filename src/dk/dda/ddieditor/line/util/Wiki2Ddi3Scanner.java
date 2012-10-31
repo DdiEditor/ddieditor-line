@@ -62,6 +62,7 @@ public class Wiki2Ddi3Scanner {
 	 * @throws Exception
 	 */
 	public void startScanning(String content, boolean create) throws Exception {
+		// InputStream is = new ByteArrayInputStream(content.getBytes("UTF-8"));
 		scanner = new Scanner(content);
 		startScanning(create);
 	}
@@ -361,6 +362,7 @@ public class Wiki2Ddi3Scanner {
 			ddi3Helper.useRPCategories(catLine);
 		}
 	}
+
 	/**
 	 * Create if then else control construct<br>
 	 * When creating an if then else control construct the following ddi3
@@ -451,20 +453,9 @@ public class Wiki2Ddi3Scanner {
 
 	private void createInterviewerInstruction(String line)
 			throws DDIFtpException {
-		String params[] = line.split(" ");
-		// check for multiple white spaces
-		for (String string : params) {
-			if (string.isEmpty()) {
-				ddi3Helper.handleParseError(ElementType.INSTRUCTION, Translator
-						.trans("line.parse.errorinterview",
-								new Object[] { line }));
-				return;
-			}
-		}
-
 		try {
 			int index = line.indexOf(intervMatch);
-			String result = line.substring(index + intervMatch.length());
+			String result = line.substring(index + intervMatch.length()).trim();
 
 			// validate condition
 			String condition = validateInterviewerInstruction(line);

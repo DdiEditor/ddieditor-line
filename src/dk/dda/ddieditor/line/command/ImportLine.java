@@ -35,7 +35,6 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.WizardDialog;
@@ -44,11 +43,13 @@ import org.joda.time.Period;
 
 import dk.dda.ddieditor.line.osgi.Activator;
 import dk.dda.ddieditor.line.util.Ddi3Helper;
+import dk.dda.ddieditor.line.util.Wiki2Ddi3Scanner;
 import dk.dda.ddieditor.line.wizard.LineWizard;
 
 public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 	public static final String ID = "dk.dda.ddieditor.line.command.ImportLine";
 	private Log log = LogFactory.getLog(LogType.SYSTEM, ImportLine.class);
+	LineWizard lineWizard;
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
@@ -61,19 +62,32 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 		}
 
 		// collect info aka wizard
-		LineWizard lineWizard = new LineWizard(ddi3Helper);
+		lineWizard = new LineWizard(ddi3Helper);
 		WizardDialog dialog = new WizardDialog(PlatformUI.getWorkbench()
 				.getDisplay().getActiveShell(), lineWizard);
 		int returnCode = dialog.open();
 
 		if (returnCode != Window.CANCEL) {
 			// import questions
+			final ImportDdiQuestionsRunnable longJob = new ImportDdiQuestionsRunnable(
+					ddi3Helper);
 			try {
-				ProgressMonitorDialog pmd = new ProgressMonitorDialog(null);
-				pmd.run(false, false,
-						new ImportDdiQuestionsRunnable(ddi3Helper));
+				PlatformUI.getWorkbench().getProgressService()
+						.busyCursorWhile(new IRunnableWithProgress() {
+							@Override
+							public void run(IProgressMonitor monitor)
+									throws InvocationTargetException,
+									InterruptedException {
+								monitor.beginTask(Translator
+										.trans("spss.importwizard.title"), 1);
+								PlatformUI.getWorkbench().getDisplay()
+										.asyncExec(longJob);
+								monitor.worked(1);
+							}
+						});
 			} catch (Exception e) {
-				Editor.showError(e, ID);
+				throw new ExecutionException(
+						Translator.trans("spss.errortitle"), e.getCause());
 			}
 
 			// refresh views
@@ -90,6 +104,10 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 	 * @throws Exception
 	 */
 	public void createDdi3(Ddi3Helper ddi3Helper) throws Exception {
+		// parse file
+		Wiki2Ddi3Scanner wiki2Ddi3Scanner = new Wiki2Ddi3Scanner(ddi3Helper);
+		wiki2Ddi3Scanner.startScanning(lineWizard.wikiToImport, true);
+
 		// study unit
 		LightXmlObjectType studyUnitLight = null;
 		List<LightXmlObjectType> studyUnits = DdiManager.getInstance()
@@ -399,7 +417,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					return;
 				}
 			}
-
+log.debug(doc);
 			if (ddi3Helper.quesIsNewList.contains(doc.getQuestionScheme()
 					.getId())) {
 				// create
@@ -439,7 +457,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 	/**
 	 * Runnable wrapping import of questions to enable RCP busy indicator
 	 */
-	class ImportDdiQuestionsRunnable implements IRunnableWithProgress {
+	class ImportDdiQuestionsRunnable implements Runnable {
 		Ddi3Helper ddi3Helper;
 		String initialResource = null;
 
@@ -448,8 +466,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 		}
 
 		@Override
-		public void run(IProgressMonitor monitor)
-				throws InvocationTargetException, InterruptedException {
+		public void run() {
 			try {
 				initialResource = PersistenceManager.getInstance()
 						.getWorkingResource();
@@ -484,7 +501,13 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 							+ ddi3Helper.getLineNo());
 				}
 			} catch (Exception e) {
-				Editor.showError(e, ID);
+				if (!e.getMessage().equals(Ddi3Helper.IMPORT_STOPPED)) {
+					Editor.showError(e, ID);
+				} else {
+					DialogUtil.infoDialog(PlatformUI.getWorkbench()
+							.getDisplay().getActiveShell(), ID, null,
+							Ddi3Helper.IMPORT_STOPPED);
+				}
 			} finally {
 				// restore initial resource
 				try {

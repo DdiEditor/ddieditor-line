@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
@@ -82,6 +83,7 @@ import org.ddialliance.ddieditor.ui.model.instrument.IfThenElse;
 import org.ddialliance.ddieditor.ui.model.variable.Variable;
 import org.ddialliance.ddieditor.ui.preference.PreferenceUtil;
 import org.ddialliance.ddieditor.ui.util.DialogUtil;
+import org.ddialliance.ddieditor.ui.util.LanguageUtil;
 import org.ddialliance.ddieditor.util.DdiEditorConfig;
 import org.ddialliance.ddieditor.util.LightXmlObjectUtil;
 import org.ddialliance.ddiftp.util.DDIFtpException;
@@ -146,12 +148,15 @@ public class Ddi3Helper {
 	List<String> postCleanSeqItems = new ArrayList<String>();
 	Map<String, SequenceDocument> postResolveSeqRefs = new HashMap<String, SequenceDocument>();
 
+	Map<String, LightXmlObjectType> postResolveSeqUniVarRefs = new HashMap<String, LightXmlObjectType>();
+
 	public XmlOptions xmlOptions = new XmlOptions();
 
 	int LABEL_LENGTH = 35;
 	String labelPostFix = " ...";
 
 	String agency = PreferenceUtil.getDdiAgency();
+	String language = LanguageUtil.getOriginalLanguage();
 	boolean isBatchMode = false;
 
 	public Ddi3Helper() throws DDIFtpException {
@@ -270,7 +275,8 @@ public class Ddi3Helper {
 
 		curSubSeq = result;
 		seqList.add(result);
-		createUniverse(label, label);
+		// comment out 20121013
+		// createUniverse(label, label);
 	}
 
 	// ==end==
@@ -321,7 +327,7 @@ public class Ddi3Helper {
 	}
 
 	private void createInitQuestionScheme() throws DDIFtpException {
-		createQuestionScheme("Default", "Using default question scheme");
+		createQuestionScheme(null, null);
 	}
 
 	public void createQuestionScheme(String label, String description)
@@ -340,19 +346,23 @@ public class Ddi3Helper {
 		if (checkString(description))
 			setText(result.getQuestionScheme().addNewDescription(), description);
 
+		createConcept(label, description);
+
 		ques = result;
 		quesList.add(result);
 		quesIsNewList.add(result.getQuestionScheme().getId());
-		createConcept(label, description);
 	}
 
 	public void createConcept(String label, String description)
 			throws DDIFtpException {
-		ConceptType result = cons.getConceptScheme().addNewConcept();
-		addIdAndVersion(result, ElementType.CONCEPT.getIdPrefix(), null);
-		setText(result.addNewLabel(), label);
-		setText(result.addNewDescription(), description);
-		conc = result;
+		// avoid init concept
+		if (label != null) {
+			ConceptType result = cons.getConceptScheme().addNewConcept();
+			addIdAndVersion(result, ElementType.CONCEPT.getIdPrefix(), null);
+			setText(result.addNewLabel(), label);
+			setText(result.addNewDescription(), description);
+			conc = result;
+		}
 	}
 
 	public void createQuestion(String pseudoVariableId, String text)
@@ -376,8 +386,7 @@ public class Ddi3Helper {
 		// name
 		NameType name = result.addNewQuestionItemName();
 		name.setStringValue(getLabelText(text));
-		XmlBeansUtil.addTranslationAttributes(name,
-				Translator.getLocaleLanguage(), false, true);
+		XmlBeansUtil.addTranslationAttributes(name, language, false, true);
 
 		// variable reference pseudoVariableId
 		UserIDType userId = result.addNewUserID();
@@ -387,8 +396,8 @@ public class Ddi3Helper {
 		// set text
 		DynamicTextType dynamicText = result.addNewQuestionText();
 		TextType textType = dynamicText.addNewText();
-		XmlBeansUtil.addTranslationAttributes(dynamicText,
-				Translator.getLocaleLanguage(), false, true);
+		XmlBeansUtil.addTranslationAttributes(dynamicText, language, false,
+				true);
 		LiteralTextType lTextType = (LiteralTextType) textType.substitute(
 				LiteralTextDocument.type.getDocumentElementName(),
 				LiteralTextType.type);
@@ -606,14 +615,16 @@ public class Ddi3Helper {
 		// add cate
 		try {
 			if (cods != null) {
-				IdentificationManager.getInstance().addReferenceInformation(
-						cods.getCodes().get(catIndex).addNewCategoryReference(),
-						LightXmlObjectUtil.createLightXmlObject(cats
-								.getCategoryScheme().getAgency(), cats
-								.getCategoryScheme().getId(), cats
-								.getCategoryScheme().getVersion(), cat.getId(), cat
-								.getVersion(), ElementType.CATEGORY
-								.getElementName()));
+				IdentificationManager.getInstance()
+						.addReferenceInformation(
+								cods.getCodes().get(catIndex)
+										.addNewCategoryReference(),
+								LightXmlObjectUtil.createLightXmlObject(cats
+										.getCategoryScheme().getAgency(), cats
+										.getCategoryScheme().getId(), cats
+										.getCategoryScheme().getVersion(), cat
+										.getId(), cat.getVersion(),
+										ElementType.CATEGORY.getElementName()));
 			}
 		} catch (IndexOutOfBoundsException e) {
 			handleParseError(ElementType.CATEGORY, Translator.trans(
@@ -770,8 +781,8 @@ public class Ddi3Helper {
 		return result;
 	}
 
-	private static CategorySchemeDocument getRPCategorySchemeByLabel(String refRes)
-			throws Exception {
+	private static CategorySchemeDocument getRPCategorySchemeByLabel(
+			String refRes) throws Exception {
 		List<LightXmlObjectType> categorySchemeRefList = DdiManager
 				.getInstance().getCategorySchemesLight(null, null, null, null)
 				.getLightXmlObjectList().getLightXmlObjectList();
@@ -780,7 +791,7 @@ public class Ddi3Helper {
 			LabelTypeImpl labelType = (LabelTypeImpl) XmlBeansUtil
 					.getDefaultLangElement(lightXmlObject.getLabelList());
 			String label = XmlBeansUtil.getTextOnMixedElement(labelType);
-			if (label.equals(refRes)) { 
+			if (label.equals(refRes)) {
 				result = DdiManager.getInstance().getRPCategoryScheme(
 						lightXmlObject.getId(), lightXmlObject.getVersion(),
 						lightXmlObject.getParentId(),
@@ -1004,8 +1015,8 @@ public class Ddi3Helper {
 
 		// set text
 		DynamicTextType dynamicText = stai.addNewDisplayText();
-		XmlBeansUtil.addTranslationAttributes(dynamicText,
-				Translator.getLocaleLanguage(), false, true);
+		XmlBeansUtil.addTranslationAttributes(dynamicText, language, false,
+				true);
 
 		TextType textType = dynamicText.addNewText();
 		LiteralTextType lTextType = (LiteralTextType) textType.substitute(
@@ -1123,16 +1134,16 @@ public class Ddi3Helper {
 				parentVersion);
 	}
 
-	private void setUniverseRefOnVariable(Variable variable,
+	private void setUniverseRefOnVariable(boolean add, Variable variable,
 			LightXmlObjectType universe) throws Exception {
 		variable.setCreate(true);
-		variable.executeChange(universe, ModelIdentifingType.Type_C.class);
+		variable.executeChange(universe, add ? ModelIdentifingType.Type_M.class
+				: ModelIdentifingType.Type_C.class);
 		new VariableDao().update(variable);
 	}
 
-	private void updateVariableUniverseReference(String pseudoVariRef,
-			LightXmlObjectType univerId) throws Exception {
-
+	private void updateVariableUniverseReference(boolean add,
+			String pseudoVariRef, LightXmlObjectType univerId) throws Exception {
 		String pseudoVariableId = "";
 		String variableId = "";
 		String variableVersion = "";
@@ -1169,10 +1180,14 @@ public class Ddi3Helper {
 			}
 		}
 		if (!variFound) {
-			throw new Exception("Variable not found");
+			// look into sequences and apply reference to varis
+			postResolveSeqUniVarRefs.put(pseudoVariRef, univerId);
+			return;
 		}
+
 		// get variable and assign universe reference
 		setUniverseRefOnVariable(
+				add,
 				getVariable(variableId, variableVersion, parentId,
 						parentVersion), univerId);
 	}
@@ -1181,47 +1196,44 @@ public class Ddi3Helper {
 			String statementText) throws Exception {
 		UniverseType prevUniv = univ;
 		SequenceType seq = null;
-		if (then.indexOf("V") == 0) {
-			// then ref. to Question Item
-			// create new universe
-			createUniverse(getLabelText(statementText),
-					getLabelText(statementText));
-			LightXmlObjectType univLight = createLightXmlObject(unis
-					.getUniverseScheme().getId(), unis.getUniverseScheme()
-					.getVersion(), univ.getId(), univ.getVersion());
-			pseudoVarIdToUnivIdMap.put(then, univLight);
-			updateVariableUniverseReference(then, univLight);
 
-			// create sub-sequence
-			seq = (SequenceType) cocs
-					.getControlConstructScheme()
-					.addNewControlConstruct()
-					.substitute(SequenceDocument.type.getDocumentElementName(),
-							SequenceType.type);
-			addIdAndVersion(seq, ElementType.SEQUENCE.getIdPrefix(), null);
-			String labelSeq = ElementType.SEQUENCE.getIdPrefix() + "-";
+		// create new universe
+		createUniverse(getLabelText(statementText), getLabelText(statementText));
+		LightXmlObjectType univLight = createLightXmlObject(unis
+				.getUniverseScheme().getId(), unis.getUniverseScheme()
+				.getVersion(), univ.getId(), univ.getVersion());
+		pseudoVarIdToUnivIdMap.put(then, univLight);
+		updateVariableUniverseReference(false, then, univLight);
 
-			// - statementText;
-			if (quei != null) {
-				labelSeq = labelSeq
-						+ getLabelText(quei.getQuestionItemNameArray(0)
-								.getStringValue());
-			} else {
-				labelSeq = labelSeq + statementText;
-			}
-			setText(seq.addNewLabel(), labelSeq);
+		// create sub-sequence
+		seq = (SequenceType) cocs
+				.getControlConstructScheme()
+				.addNewControlConstruct()
+				.substitute(SequenceDocument.type.getDocumentElementName(),
+						SequenceType.type);
+		addIdAndVersion(seq, ElementType.SEQUENCE.getIdPrefix(), null);
+		String labelSeq = ElementType.SEQUENCE.getIdPrefix() + "-";
 
-			// create statement addControlConstructToSequenceitem
-			createStatementItem(statementText, seq);
-
-			// ref. next question item
-			IdentificationManager.getInstance().addReferenceInformation(
-					seq.addNewControlConstructReference(),
-					createLightXmlObject(cocs.getControlConstructScheme()
-							.getId(), cocs.getControlConstructScheme()
-							.getVersion(), then, "1.0.0"));
-			postResolveItemRefs.add(seq);
+		// - statementText;
+		if (quei != null) {
+			labelSeq = labelSeq
+					+ getLabelText(quei.getQuestionItemNameArray(0)
+							.getStringValue());
+		} else {
+			labelSeq = labelSeq + statementText;
 		}
+		setText(seq.addNewLabel(), labelSeq);
+
+		// create statement addControlConstructToSequenceitem
+		createStatementItem(statementText, seq);
+
+		// ref. next question item
+		IdentificationManager.getInstance().addReferenceInformation(
+				seq.addNewControlConstructReference(),
+				createLightXmlObject(cocs.getControlConstructScheme().getId(),
+						cocs.getControlConstructScheme().getVersion(), then,
+						"1.0.0"));
+		postResolveItemRefs.add(seq);
 
 		// create if then else
 		IfThenElseType ifthenelse = (IfThenElseType) cocs
@@ -1232,10 +1244,9 @@ public class Ddi3Helper {
 		addIdAndVersion(ifthenelse, ElementType.IF_THEN_ELSE.getIdPrefix(),
 				null);
 
-		IfThenElse model = new IfThenElse(
-				IfThenElseDocument.Factory
-						.parse(ifthenelse.xmlText(xmlOptions)),
-				null, null);
+		IfThenElseDocument doc = IfThenElseDocument.Factory.newInstance();
+		doc.setIfThenElse(ifthenelse);
+		IfThenElse model = new IfThenElse(doc, null, null);
 		model.setCreate(true);
 
 		// ProgrammingLanguageCodeType
@@ -1371,15 +1382,13 @@ public class Ddi3Helper {
 
 	private void setText(LabelType label, String text) throws DDIFtpException {
 		XmlBeansUtil.setTextOnMixedElement(label, text);
-		XmlBeansUtil.addTranslationAttributes(label,
-				Translator.getLocaleLanguage(), false, true);
+		XmlBeansUtil.addTranslationAttributes(label, language, false, true);
 	}
 
 	private void setText(StructuredStringType struct, String text)
 			throws DDIFtpException {
 		XmlBeansUtil.setTextOnMixedElement(struct, text);
-		XmlBeansUtil.addTranslationAttributes(struct,
-				Translator.getLocaleLanguage(), false, true);
+		XmlBeansUtil.addTranslationAttributes(struct, language, false, true);
 	}
 
 	private String getLabelText(String text) {
@@ -1400,11 +1409,19 @@ public class Ddi3Helper {
 			verifyCodeSchmeCategorySchemeSizes();
 		}
 
+		// post resolve seq uni var refs
+		postResolveSeqUniVarRefs();
+
 		// post resolve refs
+		// TODO optimization at loot db hits on question id ref
 		postResolveReferences();
+
+		// cat ref resolve
 		for (CategorySchemeDocument cats : catsList) {
 			postResolveCategorySchemeLabels(cats);
 		}
+
+		// clean cc for duplicates
 		cleanSequenceForDublicateCcRefs();
 	}
 
@@ -1664,6 +1681,114 @@ public class Ddi3Helper {
 		}
 	}
 
+	private void postResolveSeqUniVarRefs() throws Exception {
+		// for speed
+		List<String> mqueIds = new ArrayList<String>();
+		for (MultipleQuestionItemDocument mqueDoc : mqueList) {
+			mqueIds.add(mqueDoc.getMultipleQuestionItem().getId());
+		}
+
+		boolean found = false;
+		for (Entry<String, LightXmlObjectType> postResolveSeqUniVarRefEntry : postResolveSeqUniVarRefs
+				.entrySet()) {
+
+			for (SequenceDocument seqe : postResolveSeqRefs.values()) {
+				for (UserIDType pseudoVarId : seqe.getSequence()
+						.getUserIDList()) {
+					// get pseudo seq ID
+					if (pseudoVarId.getType().equals(
+							Ddi3NamespaceHelper.SEQ_USER_ID_TYPE)
+							&& pseudoVarId.getStringValue().equals(
+									postResolveSeqUniVarRefEntry.getKey())) {
+
+						// loop seq and get vari refs
+						for (ReferenceType seqCcRef : seqe.getSequence()
+								.getControlConstructReferenceList()) {
+
+							// loop cc to get question construct
+							for (ControlConstructType cc : cocs
+									.getControlConstructScheme()
+									.getControlConstructList()) {
+
+								if (found) {
+									break;
+								}
+								if (cc instanceof QuestionConstructType
+										&& cc.getId().equals(
+												seqCcRef.getIDList().get(0)
+														.getStringValue())) {
+									// from cc to variable
+									for (Entry<String, LightXmlObjectType> pseudoVarIdToCcEntry : pseudoVarIdToCcIdMap
+											.entrySet()) {
+										if (cc.getId().equals(
+												pseudoVarIdToCcEntry.getValue()
+														.getId())) {
+
+											// check multiple question item ref
+											String mId = ((QuestionConstructType) cc)
+													.getQuestionReference()
+													.getIDArray(0)
+													.getStringValue();
+
+											if (mqueIds.contains(mId)) {
+												for (MultipleQuestionItemDocument mqueDoc : mqueList) {
+													if (mqueDoc
+															.getMultipleQuestionItem()
+															.getId()
+															.equals(mId)) {
+														for (QuestionItemType quei : mqueDoc
+																.getMultipleQuestionItem()
+																.getSubQuestions()
+																.getQuestionItemList()) {
+
+															for (UserIDType userId : quei
+																	.getUserIDList()) {
+																if (userId
+																		.getType()
+																		.equals(Ddi3NamespaceHelper.QUEI_VAR_USER_ID_TYPE)) {
+
+																	updateVariableUniverseReference(true, 
+																			userId.getStringValue(),
+																			postResolveSeqUniVarRefEntry
+																					.getValue());
+																}
+															}
+														}
+													}
+												}
+											} else
+											// default: set univref on variable
+											{
+												updateVariableUniverseReference(true, 
+														"V"
+																+ pseudoVarIdToCcEntry
+																		.getKey(),
+														postResolveSeqUniVarRefEntry
+																.getValue());
+											}
+
+											// declare found
+											found = true;
+											break;
+										}
+									}
+
+									if (!found) {
+										// TODO enhance error code
+										// throw new
+										// Exception("Variable not found");
+										System.out.println("iuouououou");
+									}
+								}
+							}
+							found = false;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	public List<UniverseSchemeDocument> getUnisList() {
 		return unisList;
 	}
@@ -1762,12 +1887,13 @@ public class Ddi3Helper {
 			break;
 		case 2:
 			// cancel
-			throw new DDIFtpException("Import stopped",
-					new InterruptedException());
+			throw new DDIFtpException(IMPORT_STOPPED, new Throwable());
 		default:
 			break;
 		}
 	}
+
+	public final static String IMPORT_STOPPED = "Import stopped";
 
 	public void resultToString() {
 		log.debug("Universes:");
