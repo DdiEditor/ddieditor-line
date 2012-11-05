@@ -8,6 +8,6 @@ public class TypeMarkerField extends MarkerField {
 
 	@Override
 	public String getValue(MarkerItem item) {
-		return item.getAttributeValue(DDI_TYPE, "na");
+		return item.getAttributeValue(DDI_TYPE, "NA");
 	}
 }

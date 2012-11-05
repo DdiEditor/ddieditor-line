@@ -17,6 +17,7 @@ import dk.dda.ddieditor.line.util.Ddi3Helper;
 public class ProblemView extends MarkerSupportView  {
 	static final String contentGeneratorId = "dk.dda.ddieditor.line.view.problemMarkerContentGenerator";
 	public static final String ID = "dk.dda.ddieditor.line.view.ProblemView";	
+	public static final String MARKER_ID="dk.dda.ddieditor.line.view.marker";
 	private static final String VALUE_MEMENTO_ID = "va";
 	private static final String DELIMITER = "___";
 	
@@ -40,9 +41,9 @@ public class ProblemView extends MarkerSupportView  {
 			String[] value = mementos[i].getTextData().split(DELIMITER);
 			try {
 				Ddi3Helper.createMarker(
-				Integer.parseInt(value[2]),
-						value[1],
-						value[0]);
+				Integer.parseInt(value[3]),
+						value[2],
+						value[1]);
 			} catch (NumberFormatException e) {
 				Editor.showError(e, ID);
 			} catch (DDIFtpException e) {
@@ -60,9 +61,9 @@ public class ProblemView extends MarkerSupportView  {
 
 			for (int i = 0; i < items.length; i++) {
 				IMemento child = memento.createChild(VALUE_MEMENTO_ID, "" + i);
-				for (int k = 0; k < 3; k++) {
+				for (int k = 0; k < 4; k++) {
 					value.append(items[i].getText(k));
-					if (k<3) {
+					if (k<4) {
 						value.append(DELIMITER);
 					}
 				}
