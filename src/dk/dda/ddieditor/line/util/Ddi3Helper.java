@@ -99,6 +99,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 
 import dk.dda.ddieditor.line.osgi.Activator;
+import dk.dda.ddieditor.line.view.ProblemView;
 import dk.dda.ddieditor.line.view.TypeMarkerField;
 
 public class Ddi3Helper {
@@ -1841,7 +1842,7 @@ public class Ddi3Helper {
 			IWorkspace workspace = ResourcesPlugin.getWorkspace();
 			IResource resource = workspace.getRoot();
 
-			IMarker marker = (IMarker) resource.createMarker(IMarker.TEXT);
+			IMarker marker = (IMarker) resource.createMarker(ProblemView.MARKER_ID);
 			marker.setAttribute(IMarker.LOCATION, lineNo);
 			marker.setAttribute(IMarker.MESSAGE, msg);
 			marker.setAttribute(IMarker.SOURCE_ID, Activator.PLUGIN_ID);
