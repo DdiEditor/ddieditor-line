@@ -79,128 +79,111 @@ public class LineWizard extends Wizard {
 		return true;
 	}
 
+	public void loadDdi3Helper() throws DDIFtpException, Exception {
+		// universe
+		if (resourcePage.uniRefSelectCombo != null
+				&& resourcePage.uniRefSelectCombo.getResult() != null
+				&& checkRefSelection(resourcePage.uniRefSelectCombo.getResult())) {
+			ddi3Helper.univ = DdiManager
+					.getInstance()
+					.getUniverse(
+							resourcePage.uniRefSelectCombo.getResult().getId(),
+							resourcePage.uniRefSelectCombo.getResult()
+									.getVersion(),
+							resourcePage.uniRefSelectCombo.getResult()
+									.getParentId(),
+							resourcePage.uniRefSelectCombo.getResult()
+									.getParentVersion()).getUniverse();
+		}
+
+		// concept
+		if (resourcePage.conRefSelectCombo != null
+				&& resourcePage.conRefSelectCombo.getResult() != null
+				&& checkRefSelection(resourcePage.conRefSelectCombo.getResult())) {
+			ddi3Helper.conc = DdiManager
+					.getInstance()
+					.getConcept(
+							resourcePage.conRefSelectCombo.getResult().getId(),
+							resourcePage.conRefSelectCombo.getResult()
+									.getVersion(),
+							resourcePage.conRefSelectCombo.getResult()
+									.getParentId(),
+							resourcePage.conRefSelectCombo.getResult()
+									.getParentVersion()).getConcept();
+		}
+
+		// question scheme
+		if (resourcePage.quesRefSelectCombo != null
+				&& resourcePage.quesRefSelectCombo.getResult() != null
+				&& checkRefSelection(resourcePage.quesRefSelectCombo
+						.getResult())) {
+			ddi3Helper.ques = DdiManager.getInstance().getQuestionScheme(
+					resourcePage.quesRefSelectCombo.getResult().getId(),
+					resourcePage.quesRefSelectCombo.getResult().getVersion(),
+					resourcePage.quesRefSelectCombo.getResult().getParentId(),
+					resourcePage.quesRefSelectCombo.getResult()
+							.getParentVersion());
+		}
+
+		// main sequence
+		if (resourcePage.seqRefSelectCombo != null
+				&& resourcePage.seqRefSelectCombo.getResult() != null
+				&& checkRefSelection(resourcePage.seqRefSelectCombo.getResult())) {
+			ddi3Helper.mainSeq = DdiManager
+					.getInstance()
+					.getSequence(
+							resourcePage.seqRefSelectCombo.getResult().getId(),
+							resourcePage.seqRefSelectCombo.getResult()
+									.getVersion(),
+							resourcePage.seqRefSelectCombo.getResult()
+									.getParentId(),
+							resourcePage.seqRefSelectCombo.getResult()
+									.getParentVersion()).getSequence();
+
+			List<LightXmlObjectType> refCocs = DdiManager.getInstance()
+					.getControlConstructSchemesLight(null, null, null, null)
+					.getLightXmlObjectList().getLightXmlObjectList();
+			for (LightXmlObjectType lightXmlObject : refCocs) {
+				if (lightXmlObject.getId().equals(
+						resourcePage.seqRefSelectCombo.getResult()
+								.getParentId())
+						&& lightXmlObject.getVersion().equals(
+								resourcePage.seqRefSelectCombo.getResult()
+										.getVersion())) {
+					ddi3Helper.cocs = DdiManager.getInstance()
+							.getControlConstructScheme(lightXmlObject.getId(),
+									lightXmlObject.getVersion(),
+									lightXmlObject.getParentId(),
+									lightXmlObject.getParentVersion());
+					break;
+				}
+			}
+		}
+		ddi3Helper.initDdi3();
+
+		// wiki to import
+		wikiToImport = WikiPage.wikiSyntax;
+	}
+
 	public boolean performFinish() {
 		try {
-			// switch to selected load resource
-			if (pargePage.resourceSelectionLister != null) {
-				// more than one resource loaded
-				DDIResourceType selectedLoadResource = pargePage.resourceSelectionLister
-						.getSelectedResource();
-				PersistenceManager.getInstance().setWorkingResource(
-						selectedLoadResource.getOrgName());
-			}
 			// clean up problem view
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 			IMarker[] markers = root.findMarkers(IMarker.TEXT, false,
 					IResource.DEPTH_ZERO);
 			for (int i = 0; i < markers.length; i++) {
-				String message = (String) markers[i]
-						.getAttribute(IMarker.SOURCE_ID);
-				if (message != null && message.equals(Activator.PLUGIN_ID)) {
-					markers[i].delete();
+				// switch to selected load resource
+				if (pargePage.resourceSelectionLister != null) {
+					// more than one resource loaded
+					DDIResourceType selectedLoadResource = pargePage.resourceSelectionLister
+							.getSelectedResource();
+					PersistenceManager.getInstance().setWorkingResource(
+							selectedLoadResource.getOrgName());
 				}
 			}
-
-			PlatformUI
-					.getWorkbench()
-					.getActiveWorkbenchWindow()
-					.getShell()
-					.setCursor(
-							new Cursor(PlatformUI.getWorkbench().getDisplay(),
-									SWT.CURSOR_WAIT));
-			// universe
-			if (resourcePage.uniRefSelectCombo != null
-					&& resourcePage.uniRefSelectCombo.getResult() != null
-					&& checkRefSelection(resourcePage.uniRefSelectCombo
-							.getResult())) {
-				ddi3Helper.univ = DdiManager
-						.getInstance()
-						.getUniverse(
-								resourcePage.uniRefSelectCombo.getResult()
-										.getId(),
-								resourcePage.uniRefSelectCombo.getResult()
-										.getVersion(),
-								resourcePage.uniRefSelectCombo.getResult()
-										.getParentId(),
-								resourcePage.uniRefSelectCombo.getResult()
-										.getParentVersion()).getUniverse();
-			}
-
-			// concept
-			if (resourcePage.conRefSelectCombo != null
-					&& resourcePage.conRefSelectCombo.getResult() != null
-					&& checkRefSelection(resourcePage.conRefSelectCombo
-							.getResult())) {
-				ddi3Helper.conc = DdiManager
-						.getInstance()
-						.getConcept(
-								resourcePage.conRefSelectCombo.getResult()
-										.getId(),
-								resourcePage.conRefSelectCombo.getResult()
-										.getVersion(),
-								resourcePage.conRefSelectCombo.getResult()
-										.getParentId(),
-								resourcePage.conRefSelectCombo.getResult()
-										.getParentVersion()).getConcept();
-			}
-
-			// question scheme
-			if (resourcePage.quesRefSelectCombo != null
-					&& resourcePage.quesRefSelectCombo.getResult() != null
-					&& checkRefSelection(resourcePage.quesRefSelectCombo
-							.getResult())) {
-				ddi3Helper.ques = DdiManager.getInstance().getQuestionScheme(
-						resourcePage.quesRefSelectCombo.getResult().getId(),
-						resourcePage.quesRefSelectCombo.getResult()
-								.getVersion(),
-						resourcePage.quesRefSelectCombo.getResult()
-								.getParentId(),
-						resourcePage.quesRefSelectCombo.getResult()
-								.getParentVersion());
-			}
-
-			// main sequence
-			if (resourcePage.seqRefSelectCombo != null
-					&& resourcePage.seqRefSelectCombo.getResult() != null
-					&& checkRefSelection(resourcePage.seqRefSelectCombo
-							.getResult())) {
-				ddi3Helper.mainSeq = DdiManager
-						.getInstance()
-						.getSequence(
-								resourcePage.seqRefSelectCombo.getResult()
-										.getId(),
-								resourcePage.seqRefSelectCombo.getResult()
-										.getVersion(),
-								resourcePage.seqRefSelectCombo.getResult()
-										.getParentId(),
-								resourcePage.seqRefSelectCombo.getResult()
-										.getParentVersion()).getSequence();
-
-				List<LightXmlObjectType> refCocs = DdiManager
-						.getInstance()
-						.getControlConstructSchemesLight(null, null, null, null)
-						.getLightXmlObjectList().getLightXmlObjectList();
-				for (LightXmlObjectType lightXmlObject : refCocs) {
-					if (lightXmlObject.getId().equals(
-							resourcePage.seqRefSelectCombo.getResult()
-									.getParentId())
-							&& lightXmlObject.getVersion().equals(
-									resourcePage.seqRefSelectCombo.getResult()
-											.getVersion())) {
-						ddi3Helper.cocs = DdiManager.getInstance()
-								.getControlConstructScheme(
-										lightXmlObject.getId(),
-										lightXmlObject.getVersion(),
-										lightXmlObject.getParentId(),
-										lightXmlObject.getParentVersion());
-						break;
-					}
-				}
-			}
-			ddi3Helper.initDdi3();
-
-			// wiki to import
-			wikiToImport = WikiPage.wikiSyntax;
+			
+			// set prefs
+			loadDdi3Helper();
 		} catch (Exception e) {
 			// quietly quit when decided
 			if (e instanceof DDIFtpException
@@ -209,14 +192,6 @@ public class LineWizard extends Wizard {
 			}
 			Editor.showError(e, this.getClass().getName());
 			return false;
-		} finally {
-			PlatformUI
-					.getWorkbench()
-					.getActiveWorkbenchWindow()
-					.getShell()
-					.setCursor(
-							new Cursor(PlatformUI.getWorkbench().getDisplay(),
-									SWT.CURSOR_ARROW));
 		}
 
 		unInitialize();
