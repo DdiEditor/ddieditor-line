@@ -49,7 +49,17 @@ import dk.dda.ddieditor.line.wizard.LineWizard;
 public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 	public static final String ID = "dk.dda.ddieditor.line.command.ImportLine";
 	private Log log = LogFactory.getLog(LogType.SYSTEM, ImportLine.class);
+	public boolean batch = false;
 	LineWizard lineWizard;
+
+	public ImportLine() {
+		super();
+	}
+
+	public ImportLine(LineWizard lineWizard) {
+		super();
+		this.lineWizard = lineWizard;
+	}
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
@@ -417,7 +427,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					return;
 				}
 			}
-log.debug(doc);
+
 			if (ddi3Helper.quesIsNewList.contains(doc.getQuestionScheme()
 					.getId())) {
 				// create
@@ -470,21 +480,25 @@ log.debug(doc);
 			try {
 				initialResource = PersistenceManager.getInstance()
 						.getWorkingResource();
+
 				// yes - no for errors
-				IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-				IMarker[] markers = root.findMarkers(IMarker.TEXT, false,
-						IResource.DEPTH_ZERO);
-				for (int i = 0; i < markers.length; i++) {
-					String id = (String) markers[i]
-							.getAttribute(IMarker.SOURCE_ID);
-					if (id != null && id.equals(Activator.PLUGIN_ID)) {
-						boolean yesNo = DialogUtil.yesNoDialog(Translator
-								.trans("line.continue"), Translator
-								.trans("line.syntaxerror.importcontinue"));
-						if (!yesNo) {
-							return;
+				if (!batch) {
+					IWorkspaceRoot root = ResourcesPlugin.getWorkspace()
+							.getRoot();
+					IMarker[] markers = root.findMarkers(IMarker.TEXT, false,
+							IResource.DEPTH_ZERO);
+					for (int i = 0; i < markers.length; i++) {
+						String id = (String) markers[i]
+								.getAttribute(IMarker.SOURCE_ID);
+						if (id != null && id.equals(Activator.PLUGIN_ID)) {
+							boolean yesNo = DialogUtil.yesNoDialog(Translator
+									.trans("line.continue"), Translator
+									.trans("line.syntaxerror.importcontinue"));
+							if (!yesNo) {
+								return;
+							}
+							break;
 						}
-						break;
 					}
 				}
 
