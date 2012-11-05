@@ -51,12 +51,16 @@
             id="dk.dda.ddieditor.line.view.problemMarkerContentGenerator"
             name="ProblemMarkerContentGenerator">
          <markerFieldReference
-               id="dk.dda.ddieditor.line.view.TypeMarkerField"
+               id="org.eclipse.ui.ide.creationTimeField"
                visible="true">
          </markerFieldReference>
          <markerTypeReference
-               id="org.eclipse.core.resources.textmarker">
+               id="dk.dda.ddieditor.line.view.marker">
          </markerTypeReference>
+         <markerFieldReference
+               id="dk.dda.ddieditor.line.view.TypeMarkerField"
+               visible="true">
+         </markerFieldReference>
          <markerFieldReference
                id="org.eclipse.ui.ide.descriptionField"
                visible="true">
@@ -72,5 +76,9 @@
             name="Type">
       </markerField>
    </extension>
-
+   <extension
+         id="dk.dda.ddieditor.line.view.marker"
+         name="line.marker"
+         point="org.eclipse.core.resources.markers">
+   </extension>
 </plugin>

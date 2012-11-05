@@ -8,7 +8,9 @@ Bundle-ClassPath: .,
 Bundle-Activator: dk.dda.ddieditor.line.osgi.Activator
 Bundle-Vendor: Danish Data Archive
 Export-Package: dk.dda.ddieditor.line.command,
+ dk.dda.ddieditor.line.osgi,
  dk.dda.ddieditor.line.util,
+ dk.dda.ddieditor.line.view,
  dk.dda.ddieditor.line.wizard
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources,
