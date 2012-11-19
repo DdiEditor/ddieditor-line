@@ -103,6 +103,8 @@ import dk.dda.ddieditor.line.view.ProblemView;
 import dk.dda.ddieditor.line.view.TypeMarkerField;
 
 public class Ddi3Helper {
+	public static final String MAIN_SEQUENCE_LABEL = "Main Sequence";
+
 	static private Log log = LogFactory
 			.getLog(LogType.SYSTEM, Ddi3Helper.class);
 
@@ -220,7 +222,7 @@ public class Ddi3Helper {
 			mainSeq = (SequenceType) cc.substitute(
 					SequenceDocument.type.getDocumentElementName(),
 					SequenceType.type);
-			setText(mainSeq.addNewLabel(), "Main sequence");
+			setText(mainSeq.addNewLabel(), MAIN_SEQUENCE_LABEL);
 			addIdAndVersion(mainSeq, ElementType.SEQUENCE.getIdPrefix(), null);
 		}
 
