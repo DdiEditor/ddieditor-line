@@ -10,6 +10,7 @@ import org.eclipse.ui.IMemento;
 import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.internal.views.markers.ExtendedMarkersView;
+import org.eclipse.ui.internal.views.markers.MarkerContentGenerator;
 import org.eclipse.ui.views.markers.MarkerSupportView;
 
 import dk.dda.ddieditor.line.util.Ddi3Helper;
@@ -49,6 +50,19 @@ public class ProblemView extends MarkerSupportView  {
 			} catch (DDIFtpException e) {
 				Editor.showError(e, ID);
 			}
+		}
+		
+		// hack to set marker limit to 99999
+		try {
+			Field f = ExtendedMarkersView.class.getDeclaredField("generator");
+			f.setAccessible(true);
+			MarkerContentGenerator generator = (MarkerContentGenerator) f
+					.get(ExtendedMarkersView.class.cast(this));
+			generator.setMarkerLimits(99999);
+			generator.setMarkerLimitsEnabled(false);
+		} catch (Exception e) {
+			// TODO
+			e.printStackTrace();
 		}
 	}
 
