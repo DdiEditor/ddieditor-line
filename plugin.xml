@@ -35,11 +35,22 @@
                style="push">
          </command>
       </menuContribution>
+      <menuContribution
+            allPopups="false"
+            locationURI="toolbar:dk.dda.ddieditor.line.view.ProblemView">
+         <command
+               commandId="org.eclipse.ui.ide.configureFilters"
+               icon="icons/configs.gif"
+               label="Configure Flters"
+               style="push">
+         </command>
+      </menuContribution>
    </extension>
    <extension
          point="org.eclipse.ui.views">
       <view
             class="dk.dda.ddieditor.line.view.ProblemView"
+            icon="icons/problem.gif"
             id="dk.dda.ddieditor.line.view.ProblemView"
             name="Problem Import Questions"
             restorable="true">
