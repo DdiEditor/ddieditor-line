@@ -138,7 +138,7 @@ public class Ddi3Helper {
 	CategorySchemeDocument cats;
 	public ControlConstructSchemeDocument cocs;
 	public boolean cocsIsNew = false;
-	public SequenceType mainSeq;
+	public SequenceDocument mainSeq;
 	public InterviewerInstructionSchemeDocument invs = null;
 	private List<LightXmlObjectType> instructionList = new ArrayList<LightXmlObjectType>();
 	CodeSchemeDao codeSchemedao;
@@ -217,13 +217,21 @@ public class Ddi3Helper {
 
 		// main seq
 		if (mainSeq == null) {
-			ControlConstructType cc = cocs.getControlConstructScheme()
-					.addNewControlConstruct();
-			mainSeq = (SequenceType) cc.substitute(
-					SequenceDocument.type.getDocumentElementName(),
-					SequenceType.type);
-			setText(mainSeq.addNewLabel(), MAIN_SEQUENCE_LABEL);
-			addIdAndVersion(mainSeq, ElementType.SEQUENCE.getIdPrefix(), null);
+			mainSeq = SequenceDocument.Factory.newInstance();
+			mainSeq.addNewSequence();
+			addIdAndVersion(mainSeq.getSequence(),
+					ElementType.SEQUENCE.getIdPrefix(), null);
+
+			// label
+			setText(mainSeq.getSequence().addNewLabel(), MAIN_SEQUENCE_LABEL);
+
+//			ControlConstructType cc = cocs.getControlConstructScheme()
+//					.addNewControlConstruct();
+//			mainSeq = (SequenceType) cc.substitute(
+//					SequenceDocument.type.getDocumentElementName(),
+//					SequenceType.type);
+//			setText(mainSeq.addNewLabel(), MAIN_SEQUENCE_LABEL);
+//			addIdAndVersion(mainSeq, ElementType.SEQUENCE.getIdPrefix(), null);
 		}
 
 		// interviewer instruction scheme
@@ -994,13 +1002,13 @@ public class Ddi3Helper {
 	}
 
 	public void createStatementItem(String statementText) throws Exception {
-		SequenceType seq = null;
+		SequenceDocument seq = null;
 		if (curSubSeq != null) {
-			seq = curSubSeq.getSequence();
+			seq = curSubSeq;
 		} else {
 			seq = mainSeq;
 		}
-		createStatementItem(statementText, seq);
+		createStatementItem(statementText, seq.getSequence());
 	}
 
 	private void createStatementItem(String statementText, SequenceType seq)
@@ -1309,13 +1317,13 @@ public class Ddi3Helper {
 
 	private void addControlConstructToSequence(
 			ControlConstructType controlConstruct) throws DDIFtpException {
-		SequenceType seq = null;
+		SequenceDocument seq = null;
 		if (curSubSeq != null) {
-			seq = curSubSeq.getSequence();
+			seq = curSubSeq;
 		} else {
 			seq = mainSeq;
 		}
-		setReference(seq.addNewControlConstructReference(), cocs
+		setReference(seq.getSequence().addNewControlConstructReference(), cocs
 				.getControlConstructScheme().getId(), cocs
 				.getControlConstructScheme().getVersion(),
 				controlConstruct.getId(), controlConstruct.getVersion());
@@ -1798,6 +1806,10 @@ public class Ddi3Helper {
 
 	public List<SequenceDocument> getSeqList() {
 		return seqList;
+	}
+
+	public SequenceDocument getMainSeq() {
+		return mainSeq;
 	}
 
 	public List<ConceptSchemeDocument> getConsList() {

@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.xmlbeans.XmlObject;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptualComponentDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.UniverseSchemeDocument;
@@ -293,7 +294,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			}
 		}
 
-		// sequence
+		// sequences
 		if (ddi3Helper.getSeqList().size() == 0) {
 			if (ddi3Helper.mainSeq != null && ddi3Helper.curSubSeq == null) {
 				SequenceDocument seqDoc = SequenceDocument.Factory
@@ -301,10 +302,23 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 								.xmlText(ddi3Helper.xmlOptions));
 
 				DdiManager.getInstance().updateElement(seqDoc,
-						ddi3Helper.mainSeq.getId(),
-						ddi3Helper.mainSeq.getVersion());
+						ddi3Helper.mainSeq.getSequence().getId(),
+						ddi3Helper.mainSeq.getSequence().getVersion());
 			}
 		} else {
+			// main sequence
+			if (!ddi3Helper.cocsIsNew) {
+				DdiManager.getInstance().updateElement(ddi3Helper.mainSeq,
+						ddi3Helper.mainSeq.getSequence().getId(),
+						ddi3Helper.mainSeq.getSequence().getVersion());
+			} else {
+				DdiManager.getInstance().createElement(
+						ddi3Helper.mainSeq,
+						ddi3Helper.cocs.getControlConstructScheme().getId(),
+						ddi3Helper.cocs.getControlConstructScheme()
+								.getVersion(), "ControlConstructScheme");
+			}
+			// store remaining user defined sequences
 			for (SequenceDocument seqDoc : ddi3Helper.getSeqList()) {
 				DdiManager.getInstance().createElement(
 						seqDoc,

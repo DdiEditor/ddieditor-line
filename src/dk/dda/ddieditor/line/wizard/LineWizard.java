@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.SequenceDocument;
 import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
 import org.ddialliance.ddieditor.model.resource.DDIResourceType;
@@ -138,7 +139,7 @@ public class LineWizard extends Wizard {
 							resourcePage.seqRefSelectCombo.getResult()
 									.getParentId(),
 							resourcePage.seqRefSelectCombo.getResult()
-									.getParentVersion()).getSequence();
+									.getParentVersion());
 
 			List<LightXmlObjectType> refCocs = DdiManager.getInstance()
 					.getControlConstructSchemesLight(null, null, null, null)
