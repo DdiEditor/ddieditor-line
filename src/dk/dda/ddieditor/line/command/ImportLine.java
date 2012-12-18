@@ -296,15 +296,18 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 
 		// sequences
 		// - main sequence
-		if (!ddi3Helper.cocsIsNew) {
-			DdiManager.getInstance().updateElement(ddi3Helper.mainSeq,
-					ddi3Helper.mainSeq.getSequence().getId(),
-					ddi3Helper.mainSeq.getSequence().getVersion());
-		} else {
-			DdiManager.getInstance().createElement(ddi3Helper.mainSeq,
-					ddi3Helper.cocs.getControlConstructScheme().getId(),
-					ddi3Helper.cocs.getControlConstructScheme().getVersion(),
-					"ControlConstructScheme");
+		if (ddi3Helper.mainSeq != null) {
+			if (!ddi3Helper.cocsIsNew) {
+				DdiManager.getInstance().updateElement(ddi3Helper.mainSeq,
+						ddi3Helper.mainSeq.getSequence().getId(),
+						ddi3Helper.mainSeq.getSequence().getVersion());
+			} else {
+				DdiManager.getInstance().createElement(
+						ddi3Helper.mainSeq,
+						ddi3Helper.cocs.getControlConstructScheme().getId(),
+						ddi3Helper.cocs.getControlConstructScheme()
+								.getVersion(), "ControlConstructScheme");
+			}
 		}
 		// - remaining user defined sequences
 		for (SequenceDocument seqDoc : ddi3Helper.getSeqList()) {
