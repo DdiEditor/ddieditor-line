@@ -139,7 +139,7 @@ public class LineWizard extends Wizard {
 							resourcePage.seqRefSelectCombo.getResult()
 									.getParentId(),
 							resourcePage.seqRefSelectCombo.getResult()
-									.getParentVersion());
+									.getParentVersion()).getSequence();
 
 			List<LightXmlObjectType> refCocs = DdiManager.getInstance()
 					.getControlConstructSchemesLight(null, null, null, null)
@@ -156,6 +156,7 @@ public class LineWizard extends Wizard {
 									lightXmlObject.getVersion(),
 									lightXmlObject.getParentId(),
 									lightXmlObject.getParentVersion());
+					
 					break;
 				}
 			}

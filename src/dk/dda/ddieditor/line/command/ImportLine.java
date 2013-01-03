@@ -5,14 +5,27 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.xmlbeans.XmlObject;
+import org.ddialliance.ddi3.xml.xmlbeans.archive.impl.StatementDocumentImpl;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptualComponentDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.UniverseSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.ControlConstructSchemeDocument;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.ControlConstructType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.DataCollectionDocument;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.IfThenElseDocument;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.IfThenElseType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.MultipleQuestionItemDocument;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionConstructDocument;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionConstructType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionSchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.SequenceDocument;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.SequenceType;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.StatementItemDocument;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.StatementItemType;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.impl.IfThenElseTypeImpl;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.impl.QuestionConstructTypeImpl;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.impl.SequenceTypeImpl;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.impl.StatementItemTypeImpl;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategorySchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.LogicalProductDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NoteDocument;
@@ -265,51 +278,93 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 
 		// control construct
 		if (!ddi3Helper.cocsIsNew) {
-			DdiManager.getInstance().updateElement(ddi3Helper.cocs,
-					ddi3Helper.cocs.getControlConstructScheme().getId(),
-					ddi3Helper.cocs.getControlConstructScheme().getVersion());
-		} else {
-			for (ControlConstructSchemeDocument doc : ddi3Helper.getCocsList()) {
-				if (doc.getControlConstructScheme().getControlConstructList()
-						.isEmpty()) {
-					continue;
-				} else {
-					DdiManager.getInstance().createElement(doc,
-							dataColLight.getId(),
-							dataColLight.getVersion(),
-							"datacollection__DataCollection",
-							// parent sub-elements
-							new String[] { "UserID", "VersionRationale",
-									"VersionResponsibility",
-									"DataCollectionModuleName", "Label",
-									"Description", "Coverage", "OtherMaterial",
-									"Note", "CollectionEvent" },
-							// stop elements
-							new String[] { "InterviewerInstructionScheme",
-									"Instrument", "ProcessingEvent" },
-							// jump elements
-							new String[] { "Methodology", "QuestionScheme",
-									"ControlConstructScheme" });
+			// delete old control construct scheme
+			DdiManager.getInstance().deleteElement(ddi3Helper.cocs,
+					dataColLight.getId(), dataColLight.getVersion(),
+					"datacollection__DataCollection");
+		}
+		// create control construct scheme
+		ControlConstructSchemeDocument ccsDoc = ControlConstructSchemeDocument.Factory
+				.newInstance();
+		ddi3Helper.addIdAndVersion(ccsDoc.addNewControlConstructScheme(),
+				ElementType.CONTROL_CONSTRUCT_SCHEME.getIdPrefix(), null);
+		DdiManager.getInstance().createElement(ccsDoc, dataColLight.getId(),
+				dataColLight.getVersion(), "datacollection__DataCollection");
+		ddi3Helper.cocs = ccsDoc;
+		for (ControlConstructSchemeDocument doc : ddi3Helper.getCocsList()) {
+			if (doc.getControlConstructScheme().getControlConstructList()
+					.isEmpty()) {
+				continue;
+			} else {
+				// create control constructs
+				for (ControlConstructType cocType : doc
+						.getControlConstructScheme().getControlConstructList()) {
+
+					if (cocType instanceof QuestionConstructTypeImpl) {
+						QuestionConstructDocument qcDoc = QuestionConstructDocument.Factory
+								.newInstance();
+						qcDoc.setQuestionConstruct((QuestionConstructType) cocType);
+						DdiManager.getInstance()
+								.createElement(
+										qcDoc,
+										ddi3Helper.cocs
+												.getControlConstructScheme()
+												.getId(),
+										ddi3Helper.cocs
+												.getControlConstructScheme()
+												.getVersion(),
+										"ControlConstructScheme");
+					}
+					if (cocType instanceof SequenceTypeImpl) {
+						SequenceDocument sDoc = SequenceDocument.Factory
+								.newInstance();
+						sDoc.setSequence((SequenceTypeImpl) cocType);
+						DdiManager.getInstance()
+								.createElement(
+										sDoc,
+										ddi3Helper.cocs
+												.getControlConstructScheme()
+												.getId(),
+										ddi3Helper.cocs
+												.getControlConstructScheme()
+												.getVersion(),
+										"ControlConstructScheme");
+					}
+					if (cocType instanceof StatementItemTypeImpl) {
+						StatementItemDocument siDoc = StatementItemDocument.Factory
+								.newInstance();
+						siDoc.setStatementItem((StatementItemTypeImpl) cocType);
+						DdiManager.getInstance()
+								.createElement(
+										siDoc,
+										ddi3Helper.cocs
+												.getControlConstructScheme()
+												.getId(),
+										ddi3Helper.cocs
+												.getControlConstructScheme()
+												.getVersion(),
+										"ControlConstructScheme");
+					}
+					if (cocType instanceof IfThenElseTypeImpl) {
+						IfThenElseDocument iDoc = IfThenElseDocument.Factory
+								.newInstance();
+						iDoc.setIfThenElse((IfThenElseTypeImpl) cocType);
+						DdiManager.getInstance()
+								.createElement(
+										iDoc,
+										ddi3Helper.cocs
+												.getControlConstructScheme()
+												.getId(),
+										ddi3Helper.cocs
+												.getControlConstructScheme()
+												.getVersion(),
+										"ControlConstructScheme");
+					}
 				}
 			}
 		}
 
-		// sequences
-		// - main sequence
-		if (ddi3Helper.mainSeq != null) {
-			if (!ddi3Helper.cocsIsNew) {
-				DdiManager.getInstance().updateElement(ddi3Helper.mainSeq,
-						ddi3Helper.mainSeq.getSequence().getId(),
-						ddi3Helper.mainSeq.getSequence().getVersion());
-			} else {
-				DdiManager.getInstance().createElement(
-						ddi3Helper.mainSeq,
-						ddi3Helper.cocs.getControlConstructScheme().getId(),
-						ddi3Helper.cocs.getControlConstructScheme()
-								.getVersion(), "ControlConstructScheme");
-			}
-		}
-		// - remaining user defined sequences
+		// remaining user defined sequences
 		for (SequenceDocument seqDoc : ddi3Helper.getSeqList()) {
 			DdiManager.getInstance().createElement(seqDoc,
 					ddi3Helper.cocs.getControlConstructScheme().getId(),
