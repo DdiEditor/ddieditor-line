@@ -288,8 +288,26 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 				.newInstance();
 		ddi3Helper.addIdAndVersion(ccsDoc.addNewControlConstructScheme(),
 				ElementType.CONTROL_CONSTRUCT_SCHEME.getIdPrefix(), null);
-		DdiManager.getInstance().createElement(ccsDoc, dataColLight.getId(),
-				dataColLight.getVersion(), "datacollection__DataCollection");
+		DdiManager.getInstance().createElement(
+				ccsDoc,
+				dataColLight.getId(),
+				dataColLight.getVersion(),
+				"datacollection__DataCollection",
+				// parent sub-elements
+				new String[] { "VersionResponsibility", "VersionRationale",
+						"DataCollectionModuleName", "Label", "Description",
+						"Covarage", "OtherMaterial", "Note", "Methodology",
+						"CollectionEvent", "QuestionScheme",
+						"ControlConstructScheme",
+						"InterviewerInstructionScheme", "Instrument",
+						"ProcessingEvent" },
+				// stop elements
+				new String[] { "ControlConstructScheme",
+						"InterviewerInstructionScheme", "Instrument",
+						"ProcessingEvent" },
+				// jump elements
+				new String[] { "CollectionEvent", "QuestionScheme" });
+
 		ddi3Helper.cocs = ccsDoc;
 		for (ControlConstructSchemeDocument doc : ddi3Helper.getCocsList()) {
 			if (doc.getControlConstructScheme().getControlConstructList()
@@ -304,61 +322,97 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 						QuestionConstructDocument qcDoc = QuestionConstructDocument.Factory
 								.newInstance();
 						qcDoc.setQuestionConstruct((QuestionConstructType) cocType);
-						DdiManager.getInstance()
-								.createElement(
-										qcDoc,
-										ddi3Helper.cocs
-												.getControlConstructScheme()
-												.getId(),
-										ddi3Helper.cocs
-												.getControlConstructScheme()
-												.getVersion(),
-										"ControlConstructScheme");
+						DdiManager.getInstance().createElement(
+								qcDoc,
+								ddi3Helper.cocs.getControlConstructScheme()
+										.getId(),
+								ddi3Helper.cocs.getControlConstructScheme()
+										.getVersion(),
+								"ControlConstructScheme",
+								// parent sub-elements
+								new String[] { "UserID",
+										"VersionResponsibility",
+										"VersionRationale",
+										"ControlConstructSchemeName", "Label",
+										"Description",
+										"ControlConstructSchemeReference" },
+								// stop elements
+								new String[] { "" },
+								// jump elements
+								new String[] { "VersionResponsibility",
+										"VersionRationale" });
 					}
 					if (cocType instanceof SequenceTypeImpl) {
 						SequenceDocument sDoc = SequenceDocument.Factory
 								.newInstance();
 						sDoc.setSequence((SequenceTypeImpl) cocType);
-						DdiManager.getInstance()
-								.createElement(
-										sDoc,
-										ddi3Helper.cocs
-												.getControlConstructScheme()
-												.getId(),
-										ddi3Helper.cocs
-												.getControlConstructScheme()
-												.getVersion(),
-										"ControlConstructScheme");
+						DdiManager.getInstance().createElement(
+								sDoc,
+								ddi3Helper.cocs.getControlConstructScheme()
+										.getId(),
+								ddi3Helper.cocs.getControlConstructScheme()
+										.getVersion(),
+								"ControlConstructScheme",
+								// parent sub-elements
+								new String[] { "UserID",
+										"VersionResponsibility",
+										"VersionRationale",
+										"ControlConstructSchemeName", "Label",
+										"Description",
+										"ControlConstructSchemeReference" },
+								// stop elements
+								new String[] { "" },
+								// jump elements
+								new String[] { "VersionResponsibility",
+										"VersionRationale" });
 					}
 					if (cocType instanceof StatementItemTypeImpl) {
 						StatementItemDocument siDoc = StatementItemDocument.Factory
 								.newInstance();
 						siDoc.setStatementItem((StatementItemTypeImpl) cocType);
-						DdiManager.getInstance()
-								.createElement(
-										siDoc,
-										ddi3Helper.cocs
-												.getControlConstructScheme()
-												.getId(),
-										ddi3Helper.cocs
-												.getControlConstructScheme()
-												.getVersion(),
-										"ControlConstructScheme");
+						DdiManager.getInstance().createElement(
+								siDoc,
+								ddi3Helper.cocs.getControlConstructScheme()
+										.getId(),
+								ddi3Helper.cocs.getControlConstructScheme()
+										.getVersion(),
+								"ControlConstructScheme",
+								// parent sub-elements
+								new String[] { "UserID",
+										"VersionResponsibility",
+										"VersionRationale",
+										"ControlConstructSchemeName", "Label",
+										"Description",
+										"ControlConstructSchemeReference" },
+								// stop elements
+								new String[] { "" },
+								// jump elements
+								new String[] { "VersionResponsibility",
+										"VersionRationale" });
 					}
 					if (cocType instanceof IfThenElseTypeImpl) {
 						IfThenElseDocument iDoc = IfThenElseDocument.Factory
 								.newInstance();
 						iDoc.setIfThenElse((IfThenElseTypeImpl) cocType);
-						DdiManager.getInstance()
-								.createElement(
-										iDoc,
-										ddi3Helper.cocs
-												.getControlConstructScheme()
-												.getId(),
-										ddi3Helper.cocs
-												.getControlConstructScheme()
-												.getVersion(),
-										"ControlConstructScheme");
+						DdiManager.getInstance().createElement(
+								iDoc,
+								ddi3Helper.cocs.getControlConstructScheme()
+										.getId(),
+								ddi3Helper.cocs.getControlConstructScheme()
+										.getVersion(),
+								"ControlConstructScheme",
+								// parent sub-elements
+								new String[] { "UserID",
+										"VersionResponsibility",
+										"VersionRationale",
+										"ControlConstructSchemeName", "Label",
+										"Description",
+										"ControlConstructSchemeReference" },
+								// stop elements
+								new String[] { "" },
+								// jump elements
+								new String[] { "VersionResponsibility",
+										"VersionRationale" });
 					}
 				}
 			}
