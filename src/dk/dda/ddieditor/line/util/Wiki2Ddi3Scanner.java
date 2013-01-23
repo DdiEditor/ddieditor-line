@@ -84,7 +84,7 @@ public class Wiki2Ddi3Scanner {
 	}
 
 	Pattern variNamePattern = Pattern.compile("[vV][1-9]+[0-9]*");
-
+	Pattern variNameParentesPattern = Pattern.compile("\\([vV][1-9]+[0-9]*\\)");
 	Pattern univPattern = Pattern.compile("^[=]{1}.+[=]{1}");
 	Pattern seqPattern = Pattern.compile("^[=]{2}.+[=]{2}");
 	Pattern quesPattern = Pattern.compile("^[=]{3}.+[=]{3}");
@@ -480,6 +480,11 @@ public class Wiki2Ddi3Scanner {
 		String[] lineSplit = line.split(" ");
 		String condition = lineSplit[lineSplit.length - 1];
 
+		Matcher matcherParentes = variNameParentesPattern.matcher(condition);
+		if (matcherParentes.find()) {
+			return null;
+		}
+		
 		Matcher matcher = variNamePattern.matcher(condition);
 		if (matcher.find()) {
 			// check condition
