@@ -33,6 +33,7 @@ import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
 import org.ddialliance.ddieditor.persistenceaccess.PersistenceManager;
 import org.ddialliance.ddieditor.persistenceaccess.XQueryInsertKeyword;
+import org.ddialliance.ddieditor.persistenceaccess.dbxml.DbXmlManager;
 import org.ddialliance.ddieditor.ui.editor.Editor;
 import org.ddialliance.ddieditor.ui.model.ElementType;
 import org.ddialliance.ddieditor.ui.util.DialogUtil;
@@ -131,6 +132,9 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 		// parse file
 		Wiki2Ddi3Scanner wiki2Ddi3Scanner = new Wiki2Ddi3Scanner(ddi3Helper);
 		wiki2Ddi3Scanner.startScanning(lineWizard.wikiToImport, true);
+
+		PersistenceManager.getInstance().getPersistenceStorage()
+				.setReuseTransaction(false);
 
 		// study unit
 		LightXmlObjectType studyUnitLight = null;
@@ -521,6 +525,9 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					new String[] { "DataRelationship", "OtherMaterial", "Note",
 							"CategoryScheme", });
 		}
+
+		PersistenceManager.getInstance().getPersistenceStorage()
+				.setReuseTransaction(true);
 
 		// persistence manager housekeeping
 		PersistenceManager.getInstance().getPersistenceStorage().houseKeeping();
