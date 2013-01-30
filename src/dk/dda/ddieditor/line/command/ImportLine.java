@@ -133,9 +133,6 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 		Wiki2Ddi3Scanner wiki2Ddi3Scanner = new Wiki2Ddi3Scanner(ddi3Helper);
 		wiki2Ddi3Scanner.startScanning(lineWizard.wikiToImport, true);
 
-		PersistenceManager.getInstance().getPersistenceStorage()
-				.setReuseTransaction(false);
-
 		// study unit
 		LightXmlObjectType studyUnitLight = null;
 		List<LightXmlObjectType> studyUnits = DdiManager.getInstance()
@@ -526,9 +523,6 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 							"CategoryScheme", });
 		}
 
-		PersistenceManager.getInstance().getPersistenceStorage()
-				.setReuseTransaction(true);
-
 		// persistence manager housekeeping
 		PersistenceManager.getInstance().getPersistenceStorage().houseKeeping();
 	}
@@ -625,6 +619,8 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 				long b = System.currentTimeMillis();
 
 				// import
+				PersistenceManager.getInstance().getPersistenceStorage()
+						.setReuseTransaction(false);
 				createDdi3(ddi3Helper);
 
 				// log report
@@ -644,11 +640,12 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 			} finally {
 				// restore initial resource
 				try {
+					PersistenceManager.getInstance().getPersistenceStorage()
+							.setReuseTransaction(true);
 					PersistenceManager.getInstance().setWorkingResource(
 							initialResource);
 				} catch (DDIFtpException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					// do nothing
 				}
 			}
 		}
