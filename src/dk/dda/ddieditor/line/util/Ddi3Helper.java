@@ -136,9 +136,9 @@ public class Ddi3Helper {
 	public List<String> quesIsNewList = new ArrayList<String>();
 	QuestionItemType quei;
 	CategorySchemeDocument cats;
-	
+
 	public ControlConstructSchemeDocument cocs;
-	
+
 	public boolean cocsIsNew = false;
 	public SequenceType mainSeq;
 	public InterviewerInstructionSchemeDocument invs = null;
@@ -251,8 +251,9 @@ public class Ddi3Helper {
 		addIdAndVersion(result, ElementType.UNIVERSE.getIdPrefix(), null);
 
 		// label
-		if (checkString(label))
-			setText(result.addNewLabel(), label);
+		if (checkString(label)) {
+			setText(result.addNewLabel(), subStringLabel(label));
+		}
 
 		// description
 		if (checkString(description))
@@ -364,7 +365,7 @@ public class Ddi3Helper {
 		if (label != null) {
 			ConceptType result = cons.getConceptScheme().addNewConcept();
 			addIdAndVersion(result, ElementType.CONCEPT.getIdPrefix(), null);
-			setText(result.addNewLabel(), label);
+			setText(result.addNewLabel(), subStringLabel(label));
 			setText(result.addNewDescription(), description);
 			conc = result;
 		}
@@ -390,7 +391,7 @@ public class Ddi3Helper {
 
 		// name
 		NameType name = result.addNewQuestionItemName();
-		name.setStringValue(getLabelText(text));
+		name.setStringValue(subStringLabel(text));
 		XmlBeansUtil.addTranslationAttributes(name, language, false, true);
 
 		// variable reference pseudoVariableId
@@ -460,7 +461,7 @@ public class Ddi3Helper {
 			QuestionConstructType qc = createQuestionConstruct(ques
 					.getQuestionScheme().getId(), ques.getQuestionScheme()
 					.getVersion(), result.getId(), result.getVersion());
-			setText(qc.addNewLabel(), getLabelText(text));
+			setText(qc.addNewLabel(), subStringLabel(text));
 
 			// pseudo variable id map
 			pseudoVarIdToCcIdMap.put(
@@ -549,7 +550,7 @@ public class Ddi3Helper {
 		this.mquecc = createQuestionConstruct(ques.getQuestionScheme().getId(),
 				ques.getQuestionScheme().getVersion(), type.getId(),
 				type.getVersion());
-		setText(mquecc.addNewLabel(), getLabelText(text));
+		setText(mquecc.addNewLabel(), subStringLabel(text));
 
 		mqueList.add(doc);
 		mqueToQuesMap.put(
@@ -1016,7 +1017,7 @@ public class Ddi3Helper {
 		addIdAndVersion(stai, ElementType.STATEMENT_ITEM.getIdPrefix(), null);
 
 		// statement label
-		setText(stai.addNewLabel(), getLabelText(statementText));
+		setText(stai.addNewLabel(), subStringLabel(statementText));
 
 		// set text
 		DynamicTextType dynamicText = stai.addNewDisplayText();
@@ -1052,7 +1053,7 @@ public class Ddi3Helper {
 		LabelType labelType = intv.addNewLabel();
 		XmlBeansUtil.addTranslationAttributes(labelType,
 				DdiEditorConfig.get(DdiEditorConfig.DDI_LANGUAGE), false, true);
-		XmlBeansUtil.setTextOnMixedElement(labelType, getLabelText(text));
+		XmlBeansUtil.setTextOnMixedElement(labelType, subStringLabel(text));
 
 		// set text
 		DynamicTextType dText = intv.addNewInstructionText();
@@ -1203,7 +1204,8 @@ public class Ddi3Helper {
 		SequenceType seq = null;
 
 		// create new universe
-		createUniverse(getLabelText(statementText), getLabelText(statementText));
+		createUniverse(subStringLabel(statementText),
+				subStringLabel(statementText));
 		LightXmlObjectType univLight = createLightXmlObject(unis
 				.getUniverseScheme().getId(), unis.getUniverseScheme()
 				.getVersion(), univ.getId(), univ.getVersion());
@@ -1222,7 +1224,7 @@ public class Ddi3Helper {
 		// - statementText;
 		if (quei != null) {
 			labelSeq = labelSeq
-					+ getLabelText(quei.getQuestionItemNameArray(0)
+					+ subStringLabel(quei.getQuestionItemNameArray(0)
 							.getStringValue());
 		} else {
 			labelSeq = labelSeq + statementText;
@@ -1296,7 +1298,7 @@ public class Ddi3Helper {
 
 		// label
 		setText(model.getDocument().getIfThenElse().addNewLabel(),
-				getLabelText(statementText));
+				subStringLabel(statementText));
 		ifthenelse.set(model.getDocument().getIfThenElse());
 
 		// add to seq
@@ -1396,7 +1398,7 @@ public class Ddi3Helper {
 		XmlBeansUtil.addTranslationAttributes(struct, language, false, true);
 	}
 
-	private String getLabelText(String text) {
+	private String subStringLabel(String text) {
 		if (text.length() > LABEL_LENGTH) {
 			return text.substring(0, LABEL_LENGTH) + labelPostFix;
 		} else
@@ -1581,7 +1583,7 @@ public class Ddi3Helper {
 				.getCategoryList().iterator(); iterator.hasNext();) {
 			CategoryType cat = iterator.next();
 			if (!cat.getLabelList().isEmpty()) {
-				result.append(getLabelText(XmlBeansUtil
+				result.append(subStringLabel(XmlBeansUtil
 						.getTextOnMixedElement(cat.getLabelList().get(0))));
 				if (iterator.hasNext()) {
 					result.append(", ");
@@ -1752,7 +1754,8 @@ public class Ddi3Helper {
 																		.getType()
 																		.equals(Ddi3NamespaceHelper.QUEI_VAR_USER_ID_TYPE)) {
 
-																	updateVariableUniverseReference(true, 
+																	updateVariableUniverseReference(
+																			true,
 																			userId.getStringValue(),
 																			postResolveSeqUniVarRefEntry
 																					.getValue());
@@ -1764,7 +1767,8 @@ public class Ddi3Helper {
 											} else
 											// default: set univref on variable
 											{
-												updateVariableUniverseReference(true, 
+												updateVariableUniverseReference(
+														true,
 														"V"
 																+ pseudoVarIdToCcEntry
 																		.getKey(),
@@ -1850,7 +1854,8 @@ public class Ddi3Helper {
 			IWorkspace workspace = ResourcesPlugin.getWorkspace();
 			IResource resource = workspace.getRoot();
 
-			IMarker marker = (IMarker) resource.createMarker(ProblemView.MARKER_ID);
+			IMarker marker = (IMarker) resource
+					.createMarker(ProblemView.MARKER_ID);
 			marker.setAttribute(IMarker.LOCATION, lineNo);
 			marker.setAttribute(IMarker.MESSAGE, msg);
 			marker.setAttribute(IMarker.SOURCE_ID, Activator.PLUGIN_ID);
