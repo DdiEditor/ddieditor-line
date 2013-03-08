@@ -163,6 +163,7 @@ public class Ddi3Helper {
 	String agency = PreferenceUtil.getDdiAgency();
 	String language = LanguageUtil.getOriginalLanguage();
 	boolean isBatchMode = false;
+	public Boolean isBatchParseError = false;
 
 	public Ddi3Helper() throws DDIFtpException {
 		xmlOptions.setSaveAggressiveNamespaces();
@@ -1871,6 +1872,8 @@ public class Ddi3Helper {
 
 	public void handleParseError(ElementType elementType, String msg)
 			throws DDIFtpException {
+		isBatchParseError = true;
+		
 		// add to ques import prob view
 		createMarker(lineNo, msg,
 				elementType == null ? null : elementType.getElementName());
