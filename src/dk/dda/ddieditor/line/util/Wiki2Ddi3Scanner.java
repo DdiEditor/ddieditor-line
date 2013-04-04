@@ -89,7 +89,8 @@ public class Wiki2Ddi3Scanner {
 	Pattern seqPattern = Pattern.compile("^[=]{2}.+[=]{2}");
 	Pattern quesPattern = Pattern.compile("^[=]{3}.+[=]{3}");
 	Pattern queiPattern = Pattern.compile("^\\*+ ?[vV][1-9]++");
-	Pattern mquePattern = Pattern.compile("^'{3}.+'{3}");
+//	Pattern mquePattern = Pattern.compile("^'{3}.+ ?#{1}/D{2}. +'{3}");
+	Pattern mquePattern = Pattern.compile("^'{3}.+#?+'{3}");
 	Pattern catePattern = Pattern.compile("^\\*{2} ?");
 	Pattern cateReusePattern = Pattern.compile("^\\*{2} ?[vV][1-9]+[0-9]*");
 	Pattern conditionPattern = Pattern
@@ -302,24 +303,35 @@ public class Wiki2Ddi3Scanner {
 	 * Create multiple question item
 	 * 
 	 * @param line
-	 *            of '* '''Multiple Question text''''
+	 *            of '* '''#groupingID Multiple Question text''''
 	 */
 	private void createMultipleQuestion(String line) throws Exception {
 		String text = null;
+		String label = null;
+		String groupingId = null;
+		
 		int index = line.indexOf("'''");
 		if (index > -1) {
 			int end = line.indexOf("'''", index + 3);
 			if (end > -1) {
 				text = line.substring(index + 3, end);
+				int hashIndex = text.indexOf("#");
+				if (hashIndex > -1) {
+					int endIndex = text.indexOf(' ');
+					groupingId = text.substring(hashIndex+1, endIndex);
+					label = text.substring(endIndex+1);
+				} else {
+					label = text;
+				}
 			}
 		}
-		if (text != null) {
+		if (label != null) {
 			// unset mque
 			if (text.equals(MQUE_END)) {
 				ddi3Helper.unsetMultipleQuestion();
 				return;
 			}
-			ddi3Helper.createMultipleQuestion(text);
+			ddi3Helper.createMultipleQuestion(groupingId, label);
 		}
 	}
 

@@ -80,6 +80,7 @@ import org.ddialliance.ddieditor.ui.model.code.CodeScheme;
 import org.ddialliance.ddieditor.ui.model.instrument.ComputationItem;
 import org.ddialliance.ddieditor.ui.model.instrument.ConditionalUtil;
 import org.ddialliance.ddieditor.ui.model.instrument.IfThenElse;
+import org.ddialliance.ddieditor.ui.model.userid.UserIdType;
 import org.ddialliance.ddieditor.ui.model.variable.Variable;
 import org.ddialliance.ddieditor.ui.preference.PreferenceUtil;
 import org.ddialliance.ddieditor.ui.util.DialogUtil;
@@ -136,6 +137,7 @@ public class Ddi3Helper {
 	public List<String> quesIsNewList = new ArrayList<String>();
 	QuestionItemType quei;
 	CategorySchemeDocument cats;
+	String prevMultipleQuestionItemLabel = null;
 
 	public ControlConstructSchemeDocument cocs;
 
@@ -509,7 +511,7 @@ public class Ddi3Helper {
 		return questionConstruct;
 	}
 
-	public void createMultipleQuestion(String text) throws Exception {
+	public void createMultipleQuestion(String groupingId, String text) throws Exception {
 		this.mque = true;
 		MultipleQuestionItemDocument doc = MultipleQuestionItemDocument.Factory
 				.newInstance();
@@ -517,6 +519,11 @@ public class Ddi3Helper {
 		addIdAndVersion(type, ElementType.MULTIPLE_QUESTION_ITEM.getIdPrefix(),
 				null);
 		type.addNewSubQuestions();
+		
+		// userid 
+		UserIDType userId = type.addNewUserID();
+		userId.setType(UserIdType.MULTI_QUEI_GROUPING_ID.getType());
+		userId.setStringValue(groupingId);
 
 		// concept ref
 		if (conc != null) {
@@ -1431,6 +1438,17 @@ public class Ddi3Helper {
 
 		// clean cc for duplicates
 		cleanSequenceForDublicateCcRefs();
+		
+		// clean up userid om multiplequestionitems
+		cleanMultipleQuestion();
+	}
+	
+	private void cleanMultipleQuestion() {
+
+		for (MultipleQuestionItemDocument mqueDoc : mqueList) {
+//			mqueDoc.getMultipleQuestionItem().get
+//			mqueDoc.getMultipleQuestionItem().removeUserID(0);
+		}
 	}
 
 	// 1 Links the control constructs to the real id of question constructs
