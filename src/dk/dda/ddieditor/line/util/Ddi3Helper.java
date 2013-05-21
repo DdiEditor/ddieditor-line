@@ -520,10 +520,12 @@ public class Ddi3Helper {
 				null);
 		type.addNewSubQuestions();
 		
-		// userid 
-		UserIDType userId = type.addNewUserID();
-		userId.setType(UserIdType.MULTI_QUEI_GROUPING_ID.getType());
-		userId.setStringValue(groupingId);
+		// userid
+		if (groupingId != null) {
+			UserIDType userId = type.addNewUserID();
+			userId.setType(UserIdType.MULTI_QUEI_GROUPING_ID.getType());
+			userId.setStringValue(groupingId);
+		}
 
 		// concept ref
 		if (conc != null) {
