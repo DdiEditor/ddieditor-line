@@ -161,6 +161,7 @@ public class LineWizard extends Wizard {
 				}
 			}
 		}
+		ddi3Helper.setCreateInstrument(resourcePage.createInstrument);
 		ddi3Helper.initDdi3();
 
 		// wiki to import

@@ -166,6 +166,7 @@ public class Ddi3Helper {
 	String language = LanguageUtil.getOriginalLanguage();
 	boolean isBatchMode = false;
 	public Boolean isBatchParseError = false;
+	boolean createInstrument;
 
 	public Ddi3Helper() throws DDIFtpException {
 		xmlOptions.setSaveAggressiveNamespaces();
@@ -286,6 +287,14 @@ public class Ddi3Helper {
 		seqList.add(result);
 		// comment out 20121013
 		// createUniverse(label, label);
+	}
+	
+	public void setCreateInstrument(boolean state) {
+		this.createInstrument = state;
+	}
+	
+	public boolean getCreateInstrument() {
+		return this.createInstrument;
 	}
 
 	// ==end==

@@ -14,6 +14,7 @@ import org.ddialliance.ddi3.xml.xmlbeans.datacollection.ControlConstructType;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.DataCollectionDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.IfThenElseDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.IfThenElseType;
+import org.ddialliance.ddi3.xml.xmlbeans.datacollection.InstrumentDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.MultipleQuestionItemDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionConstructDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.datacollection.QuestionConstructType;
@@ -29,20 +30,27 @@ import org.ddialliance.ddi3.xml.xmlbeans.datacollection.impl.StatementItemTypeIm
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.CategorySchemeDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.logicalproduct.LogicalProductDocument;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.NoteDocument;
+import org.ddialliance.ddieditor.logic.identification.IdentificationManager;
 import org.ddialliance.ddieditor.model.DdiManager;
+import org.ddialliance.ddieditor.model.lightxmlobject.LabelType;
+import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectListDocument;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
 import org.ddialliance.ddieditor.persistenceaccess.PersistenceManager;
 import org.ddialliance.ddieditor.persistenceaccess.XQueryInsertKeyword;
 import org.ddialliance.ddieditor.persistenceaccess.dbxml.DbXmlManager;
+import org.ddialliance.ddieditor.ui.dbxml.instrument.InstrumentDao;
 import org.ddialliance.ddieditor.ui.editor.Editor;
 import org.ddialliance.ddieditor.ui.model.ElementType;
+import org.ddialliance.ddieditor.ui.model.instrument.Instrument;
 import org.ddialliance.ddieditor.ui.util.DialogUtil;
 import org.ddialliance.ddieditor.ui.view.ViewManager;
+import org.ddialliance.ddieditor.util.DdiEditorConfig;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
 import org.ddialliance.ddiftp.util.log.Log;
 import org.ddialliance.ddiftp.util.log.LogFactory;
 import org.ddialliance.ddiftp.util.log.LogType;
+import org.ddialliance.ddiftp.util.xml.XmlBeansUtil;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IMarker;
@@ -522,6 +530,12 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 					new String[] { "DataRelationship", "OtherMaterial", "Note",
 							"CategoryScheme", });
 		}
+		
+		// instrument
+		if (ddi3Helper.getCreateInstrument()) {
+			createInstrument(ddi3Helper, dataColLight.getId(),
+					dataColLight.getVersion());
+		}
 
 		// persistence manager housekeeping
 		PersistenceManager.getInstance().getPersistenceStorage().houseKeeping();
@@ -574,6 +588,64 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 						doc.getQuestionScheme().getId(),
 						doc.getQuestionScheme().getVersion());
 			}
+		}
+	}
+	
+	private void createInstrument(Ddi3Helper ddi3Helper, String dataColId,
+			String dataColVersion) throws DDIFtpException, Exception {
+		
+		List<LightXmlObjectType> instrumentsList = DdiManager.getInstance()
+				.getInstrumentsLight(null, null, dataColId, dataColVersion)
+				.getLightXmlObjectList().getLightXmlObjectList();
+		
+		if (instrumentsList != null && instrumentsList.size() == 0) {
+			List<LightXmlObjectType> sequences = DdiManager.getInstance()
+					.getSequencesLight(null, null, null, null)
+					.getLightXmlObjectList().getLightXmlObjectList();
+			boolean found = false;
+			for (LightXmlObjectType sequence : sequences) {
+				if (found) {
+					break;
+				}
+				for (LabelType label : sequence.getLabelList()) {
+					String labelTxt = XmlBeansUtil.getTextOnMixedElement(label);
+					if (labelTxt.equals(Ddi3Helper.MAIN_SEQUENCE_LABEL)) {
+						found = true;
+
+						// add agency
+						sequence.setAgency(DdiEditorConfig
+								.get(DdiEditorConfig.DDI_AGENCY));
+
+						// instrument
+						InstrumentDocument instDoc = InstrumentDocument.Factory
+								.newInstance();
+						instDoc.addNewInstrument();
+						IdentificationManager.getInstance().addIdentification(
+								instDoc.getInstrument(),
+								ElementType.INSTRUMENT.getIdPrefix(), null);
+
+						// sequence reference
+						IdentificationManager
+								.getInstance()
+								.addReferenceInformation(
+										instDoc.getInstrument()
+												.addNewControlConstructReference(),
+										sequence);
+
+						// add ddi
+						LightXmlObjectType dataCollection = DdiManager
+								.getInstance()
+								.getDataCollectionsLight(null, null, null, null)
+								.getLightXmlObjectList()
+								.getLightXmlObjectList().get(0);
+						Instrument instModel = new Instrument(instDoc,
+								dataCollection.getId(),
+								dataCollection.getVersion());
+						new InstrumentDao().create(instModel);
+					}
+				}
+			}
+
 		}
 	}
 
