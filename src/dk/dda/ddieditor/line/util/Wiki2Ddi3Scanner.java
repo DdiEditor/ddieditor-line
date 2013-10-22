@@ -321,9 +321,8 @@ public class Wiki2Ddi3Scanner {
 		String text = line.substring(matcher.end()).trim();
 		if (create) {
 			ddi3Helper.createQuestion(no, text);
-		} else {
-			ddi3Helper.setPseudoVarId(no);
 		}
+		ddi3Helper.setPseudoVarId(no);
 	}
 
 	/**
@@ -445,11 +444,9 @@ public class Wiki2Ddi3Scanner {
 
 			// if condition
 			if (!ConditionalUtil.validCondition(params[1])) {
-				reportError(
-						ElementType.IF_THEN_ELSE,
-						Translator
-								.trans("line.parse.errorifthenelse.condition")
-								+ params[1], create);
+				reportError(ElementType.IF_THEN_ELSE, Translator.trans(
+						"line.parse.errorifthenelse.condition", params[1],
+						ddi3Helper.getLineNo()), create);
 			}
 			String[] varIDs = ConditionalUtil.extractUniqueIDs(params[1]);
 			for (String varID : varIDs) {
