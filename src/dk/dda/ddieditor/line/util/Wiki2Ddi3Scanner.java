@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,6 +70,7 @@ public class Wiki2Ddi3Scanner {
 
 	private void startScanning(boolean create) throws Exception {
 		errorList.clear();
+		ddi3Helper.clean();
 		String current = null;
 		while (scanner.hasNextLine()) {
 			++lineNo;
@@ -77,6 +79,26 @@ public class Wiki2Ddi3Scanner {
 		}
 		scanner.close();
 
+		// check refs to pseudo variable ids
+		Set<String> varIdRefs = ddi3Helper.pseudoVarIdRefMap.keySet();
+		for (String varIdRef : varIdRefs) {
+			if (!ddi3Helper.pseudoVarIdExists(varIdRef)) {
+				reportError(ElementType.IF_THEN_ELSE, Translator.trans(
+						"line.parse.errorifthenelse.variableref", varIdRef,
+						ddi3Helper.getPseudoVarIdRefLineNo(varIdRef)), create);
+			}
+		}
+		
+		// check refts to sequences
+		Set<String> seqIdRefs = ddi3Helper.pseudoSeqIdRefMap.keySet();
+		for (String seqIdRef : seqIdRefs) {
+			if (!ddi3Helper.pseudoSeqIdExists(seqIdRef)) {
+				reportError(ElementType.IF_THEN_ELSE, Translator.trans(
+						"line.parse.errorifthenelse.sequenceref", seqIdRef,
+						ddi3Helper.getPseudoSeqIdRefLineNo(seqIdRef)), create);
+			}
+		}
+		
 		// update refs
 		if (create) {
 			ddi3Helper.postResolve();
@@ -89,7 +111,7 @@ public class Wiki2Ddi3Scanner {
 	Pattern seqPattern = Pattern.compile("^[=]{2}.+[=]{2}");
 	Pattern quesPattern = Pattern.compile("^[=]{3}.+[=]{3}");
 	Pattern queiPattern = Pattern.compile("^\\*+ ?[vV][1-9]++");
-//	Pattern mquePattern = Pattern.compile("^'{3}.+ ?#{1}/D{2}. +'{3}");
+	// Pattern mquePattern = Pattern.compile("^'{3}.+ ?#{1}/D{2}. +'{3}");
 	Pattern mquePattern = Pattern.compile("^'{3}.+#?+'{3}");
 	Pattern catePattern = Pattern.compile("^\\*{2} ?");
 	Pattern cateReusePattern = Pattern.compile("^\\*{2} ?[vV][1-9]+[0-9]*");
@@ -130,9 +152,7 @@ public class Wiki2Ddi3Scanner {
 			return;
 		}
 		if (defineLine(line, seqPattern)) {
-			if (create) {
-				createSequence(line);
-			}
+			createSequence(line, create);
 			return;
 		}
 		if (defineLine(line, univPattern)) {
@@ -157,19 +177,11 @@ public class Wiki2Ddi3Scanner {
 			return;
 		}
 		if (defineLine(line, queiPattern)) {
-			if (create)
-				createQuestion(line);
+			createQuestion(line, create);
 			return;
 		}
 		if (line.indexOf(ifThenElseMatch) > -1) {
-			if (create) {
-				createIfThenElse(line, true);
-			} else {
-				if (!validateExpression(line.split(" ")[1], conditionPattern)) {
-					errorList.add(Translator.trans(
-							"line.parse.errorifthenelse.condition", line));
-				}
-			}
+			createIfThenElse(line, create);
 			return;
 		}
 		if (line.indexOf(compMatch) > -1) {
@@ -195,7 +207,6 @@ public class Wiki2Ddi3Scanner {
 				createMultipleQuestion(line);
 			return;
 		}
-
 		errorList.add(Translator.trans("processLine.error.undefined",
 				new Object[] { lineNo, line }));
 		return;
@@ -206,9 +217,13 @@ public class Wiki2Ddi3Scanner {
 		return matcher.find();
 	}
 
-	protected boolean validateExpression(String expression, Pattern pattern) {
-		Matcher matcher = pattern.matcher(expression);
-		return matcher.matches();
+	private void reportError(ElementType elementType, String msg, boolean create)
+			throws DDIFtpException {
+		if (create) {
+			ddi3Helper.handleParseError(elementType, msg);
+		} else {
+			errorList.add(msg);
+		}
 	}
 
 	/**
@@ -239,12 +254,19 @@ public class Wiki2Ddi3Scanner {
 	 *            of '==sequence-id==sequence label'
 	 * @throws DDIFtpException
 	 */
-	private void createSequence(String line) throws DDIFtpException {
+	private void createSequence(String line, boolean create) throws DDIFtpException {
+		
 		// label
 		String id = null;
 		int index = line.indexOf("==", 2);
 		if (index > -1) {
 			id = line.substring(2, index);
+		}
+		if (!id.equals(SEQ_END)) {
+			ddi3Helper.setPseudoSeqId(id);
+		}
+		if (!create) {
+			return;
 		}
 
 		// label
@@ -289,14 +311,19 @@ public class Wiki2Ddi3Scanner {
 	 *            of '* v1 question item text here'
 	 * @throws DDIFtpException
 	 */
-	private void createQuestion(String line) throws DDIFtpException {
+	private void createQuestion(String line, boolean create)
+			throws DDIFtpException {
 		String no = "";
 		Matcher matcher = variNamePattern.matcher(line);
 		matcher.find();
 
 		no = "V" + line.substring(matcher.start() + 1, matcher.end());
 		String text = line.substring(matcher.end()).trim();
-		ddi3Helper.createQuestion(no, text);
+		if (create) {
+			ddi3Helper.createQuestion(no, text);
+		} else {
+			ddi3Helper.setPseudoVarId(no);
+		}
 	}
 
 	/**
@@ -309,7 +336,7 @@ public class Wiki2Ddi3Scanner {
 		String text = null;
 		String label = null;
 		String groupingId = null;
-		
+
 		int index = line.indexOf("'''");
 		if (index > -1) {
 			int end = line.indexOf("'''", index + 3);
@@ -318,8 +345,8 @@ public class Wiki2Ddi3Scanner {
 				int hashIndex = text.indexOf("#");
 				if (hashIndex > -1) {
 					int endIndex = text.indexOf(' ');
-					groupingId = text.substring(hashIndex+1, endIndex);
-					label = text.substring(endIndex+1);
+					groupingId = text.substring(hashIndex + 1, endIndex);
+					label = text.substring(endIndex + 1);
 				} else {
 					label = text;
 				}
@@ -396,15 +423,15 @@ public class Wiki2Ddi3Scanner {
 		// check for multiple white spaces
 		for (String string : params) {
 			if (string.isEmpty()) {
-				ddi3Helper
-						.handleParseError(
-								ElementType.IF_THEN_ELSE,
-								Translator
-										.trans("line.parse.errorifthenelse",
-												new Object[] {
-														line,
-														Translator
-																.trans("line.parse.errormultiplewhitespaces") }));
+				reportError(
+						ElementType.IF_THEN_ELSE,
+						Translator
+								.trans("line.parse.errorifthenelse",
+										new Object[] {
+												line,
+												Translator
+														.trans("line.parse.errormultiplewhitespaces") }),
+						create);
 				return;
 			}
 		}
@@ -417,15 +444,26 @@ public class Wiki2Ddi3Scanner {
 			}
 
 			// if condition
-			if (!validateExpression(params[1], conditionPattern)) {
-				ddi3Helper.handleParseError(ElementType.IF_THEN_ELSE,
-						Translator.trans(
-								"line.parse.errorifthenelse.condition", line));
+			if (!ConditionalUtil.validCondition(params[1])) {
+				reportError(
+						ElementType.IF_THEN_ELSE,
+						Translator
+								.trans("line.parse.errorifthenelse.condition")
+								+ params[1], create);
 			}
+			String[] varIDs = ConditionalUtil.extractUniqueIDs(params[1]);
+			for (String varID : varIDs) {
+				ddi3Helper.setPseudoVarIdRef(varID);
+			}
+			
 
 			// then
 			if (variNamePattern.matcher(params[2]).find()) {
 				params[2] = "V" + params[2].substring(1);
+				ddi3Helper.setPseudoVarIdRef(params[2]);
+			} else {
+				// sequence ref. expected
+				ddi3Helper.setPseudoSeqIdRef(params[2]);
 			}
 
 			// else
@@ -433,6 +471,10 @@ public class Wiki2Ddi3Scanner {
 				params[3] = null;
 			} else if (variNamePattern.matcher(params[3]).find()) {
 				params[3] = "V" + params[3].substring(1);
+				ddi3Helper.setPseudoVarIdRef(params[3]);
+			} else {
+				// sequence ref. expected
+				ddi3Helper.setPseudoSeqIdRef(params[3]);
 			}
 
 			if (create) {
@@ -488,7 +530,7 @@ public class Wiki2Ddi3Scanner {
 	}
 
 	private String validateInterviewerInstruction(String line)
-			throws DdiModelException {
+			throws DdiModelException, DDIFtpException {
 		String[] lineSplit = line.split(" ");
 		String condition = lineSplit[lineSplit.length - 1];
 
@@ -496,11 +538,15 @@ public class Wiki2Ddi3Scanner {
 		if (matcherParentes.find()) {
 			return null;
 		}
-		
+
 		Matcher matcher = variNamePattern.matcher(condition);
 		if (matcher.find()) {
 			// check condition
-			ConditionalUtil.validateCondition(condition);
+			if (!ConditionalUtil.validCondition(condition)) {
+				reportError(ElementType.INSTRUCTION,
+						Translator.trans("line.parse.errorinterview", line),
+						false);
+			}
 			return condition;
 		}
 		if (condition.equals("na") || condition.equals("NA")) {

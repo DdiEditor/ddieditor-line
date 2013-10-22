@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
@@ -156,6 +157,11 @@ public class Ddi3Helper {
 	Map<String, SequenceDocument> postResolveSeqRefs = new HashMap<String, SequenceDocument>();
 
 	Map<String, LightXmlObjectType> postResolveSeqUniVarRefs = new HashMap<String, LightXmlObjectType>();
+	
+	HashMap<String, Integer> pseudoVarIdMap = new HashMap<String, Integer>();
+	HashMap<String, Integer> pseudoVarIdRefMap = new HashMap<String, Integer>();
+	HashMap<String, Integer> pseudoSeqIdMap = new HashMap<String, Integer>();
+	HashMap<String, Integer> pseudoSeqIdRefMap = new HashMap<String, Integer>();
 
 	public XmlOptions xmlOptions = new XmlOptions();
 
@@ -247,6 +253,13 @@ public class Ddi3Helper {
 		// variables
 		variabledao = new VariableDao();
 	}
+	
+	public void clean() {
+		pseudoVarIdMap = new HashMap<String, Integer>();
+		pseudoVarIdRefMap = new HashMap<String, Integer>();
+		pseudoSeqIdMap = new HashMap<String, Integer>();
+		pseudoSeqIdRefMap = new HashMap<String, Integer>();		
+	}
 
 	// =universe label=universe description
 	public void createUniverse(String label, String description)
@@ -287,6 +300,7 @@ public class Ddi3Helper {
 		seqList.add(result);
 		// comment out 20121013
 		// createUniverse(label, label);
+		
 	}
 	
 	public void setCreateInstrument(boolean state) {
@@ -1423,7 +1437,7 @@ public class Ddi3Helper {
 		} else
 			return text;
 	}
-
+	
 	/**
 	 * Resolve references and label category schemes
 	 * 
@@ -1876,6 +1890,46 @@ public class Ddi3Helper {
 
 	public void setLineNo(int lineNo) {
 		this.lineNo = lineNo;
+	}
+	
+	public void setPseudoVarId(String varId) {
+		pseudoVarIdMap.put(varId, getLineNo());
+	}
+	
+	public int getPseudoVarIdLineNo(String varId) {
+		return pseudoVarIdMap.get(varId);
+	}
+
+	public boolean pseudoVarIdExists(String varId) {
+		return pseudoVarIdMap.get(varId) == null ? false: true;
+	}
+
+	public void setPseudoVarIdRef(String varId) {
+		pseudoVarIdRefMap.put(varId, getLineNo());
+	}
+	
+	public int getPseudoVarIdRefLineNo(String varId) {
+		return pseudoVarIdRefMap.get(varId);
+	}
+
+	public void setPseudoSeqId(String varId) {
+		pseudoSeqIdMap.put(varId, getLineNo());
+	}
+	
+	public int getPseudoSeqIdLineNo(String varId) {
+		return pseudoSeqIdMap.get(varId);
+	}
+
+	public boolean pseudoSeqIdExists(String varId) {
+		return pseudoSeqIdMap.get(varId) == null ? false: true;
+	}
+
+	public void setPseudoSeqIdRef(String varId) {
+		pseudoSeqIdRefMap.put(varId, getLineNo());
+	}
+	
+	public int getPseudoSeqIdRefLineNo(String varId) {
+		return pseudoSeqIdRefMap.get(varId);
 	}
 
 	public static void createMarker(int lineNo, String msg, String elemetName)
