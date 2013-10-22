@@ -1,12 +1,15 @@
 package dk.dda.ddieditor.line.wizard;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 
-import org.ddialliance.ddi3.xml.xmlbeans.datacollection.SequenceDocument;
 import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
 import org.ddialliance.ddieditor.model.resource.DDIResourceType;
@@ -16,25 +19,33 @@ import org.ddialliance.ddieditor.ui.preference.PreferenceUtil;
 import org.ddialliance.ddieditor.ui.util.DialogUtil;
 import org.ddialliance.ddiftp.util.DDIFtpException;
 import org.ddialliance.ddiftp.util.Translator;
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.jface.wizard.WizardPage;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.IEditorRegistry;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.part.FileEditorInput;
 import org.jamwiki.parser.ParserException;
 import org.jamwiki.parser.ParserInput;
 import org.jamwiki.parser.ParserOutput;
@@ -156,7 +167,7 @@ public class LineWizard extends Wizard {
 									lightXmlObject.getVersion(),
 									lightXmlObject.getParentId(),
 									lightXmlObject.getParentVersion());
-					
+
 					break;
 				}
 			}
@@ -184,7 +195,7 @@ public class LineWizard extends Wizard {
 							selectedLoadResource.getOrgName());
 				}
 			}
-			
+
 			// set prefs
 			loadDdi3Helper();
 		} catch (Exception e) {
@@ -264,6 +275,46 @@ public class LineWizard extends Wizard {
 						.getActiveWorkbenchWindow().getShell(),
 						Activator.PLUGIN_ID,
 						Translator.trans("line.errortitle"), result.toString());
+
+				// file writer allways to the same file
+				// content
+				IProject project;
+				String errorLogFile = "questionparseerrorlog.txt";
+				File f;
+				try {
+					IWorkspace ws = ResourcesPlugin.getWorkspace();
+					project = ws.getRoot().getProject("ddieditor-externalfiles");
+					if (!project.exists())
+						project.create(null);
+					if (!project.isOpen())
+						project.open(null);
+
+					f = new File(project.getLocation().toFile()
+							.getAbsoluteFile()
+							+ File.separator + errorLogFile);
+					Writer output = new BufferedWriter(new OutputStreamWriter(
+							new FileOutputStream(f), "UTF8"));
+					try {
+						output.write(result.toString());
+					} finally {
+						output.close();
+					}
+
+					IPath location = new Path(f.getAbsolutePath());// +
+																		// f.getAbsolutePath());
+					IFile file = project.getFile(location.lastSegment());
+					if (!file.exists()) {
+						file.createLink(location, IResource.NONE, null);
+					}
+
+					IWorkbenchPage page = PlatformUI.getWorkbench()
+							.getActiveWorkbenchWindow().getActivePage();
+					if (page != null)
+						page.openEditor(new FileEditorInput(file),
+								IEditorRegistry.SYSTEM_EXTERNAL_EDITOR_ID);
+				} catch (Exception e2) {
+					Editor.showError(e2, "");
+				}
 			}
 		}
 
