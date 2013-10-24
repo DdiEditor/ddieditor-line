@@ -85,6 +85,25 @@ public class WikiPage extends WizardPage {
 				pathText, browser, this);
 		pathBrowse.addSelectionListener(pathSelectionListener);
 
+		// reload wiki
+		Button reloadWiki = editor.createButton(group,
+				Translator.trans("line.wizard.wiki.reloadbutton"));
+		reloadWiki.addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (pathText.getText().length() > 0) {
+					readAndDisplayFile(pathText.getText(), browser);
+					// set page complete
+					setPageComplete(true);
+				}
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				// do nothing
+			}
+		});
+
 		// edit wiki
 		Button editWiki = editor.createButton(group,
 				Translator.trans("line.wizard.wiki.editbutton"));
