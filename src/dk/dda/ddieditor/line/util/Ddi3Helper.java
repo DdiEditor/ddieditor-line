@@ -730,7 +730,6 @@ public class Ddi3Helper {
 		File varCodesXmlFile = null;
 		String name = "DDI-L-";
 		
-		// see PrintDDI3.java:
 		// 1. export relevant resource to tmp. file.
 		// 2. transform resource using nbr-var-codes.xsl
 		// 3. parse nbr-var-codes.xml building varCodes map - filtering non coded variable out
@@ -789,7 +788,6 @@ public class Ddi3Helper {
 	}
 
 	public void createCategory(String text) throws DDIFtpException {
-//		HashMap<String, Integer> nbrVariableCodesMap = new HashMap<String, Integer>();
 		// create category scheme - if not already done
 		if (cats == null) {
 			createCategoryScheme();
@@ -798,9 +796,6 @@ public class Ddi3Helper {
 			catIndex++;
 		}
 
-		// get number of Code for all variables
-//		nbrVariableCodesMap = getAllNbrVariableCodes();
-		
 		// create category
 		CategoryType cat = cats.getCategoryScheme().addNewCategory();
 		addIdAndVersion(cat, ElementType.CATEGORY.getIdPrefix(), null);

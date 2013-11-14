@@ -25,7 +25,6 @@ public class Wiki2Ddi3Scanner {
 	int lineNo = 0;
 
 	Ddi3Helper ddi3Helper = null;
-//	HashMap<String, Integer> nbrVariableCodesMap = new HashMap<String, Integer>();
 	HashMap<String, Integer> nbrVariableCodesMap = null;
 	
 	final static String SEQ_END = "end";

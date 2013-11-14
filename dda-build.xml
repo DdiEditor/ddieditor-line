@@ -9,6 +9,7 @@
 	<property name="src.dir" value="${basedir}/src" />
 	<property name="src.resources.dir" value="${src.dir}/resources" />
 	<property name="testsrc.dir" value="${basedir}/testsrc" />
+        <property name="linexslt.dir" value="${basedir}/../ddieditor-ui/bin/resources/linexslt" />
 
 	<property name="lib.dir.java.lib" value="${basedir}/../lib-java/" />
 	<property name="lib.dir.resources.lib" value="${basedir}/../resources/" />
@@ -26,6 +27,7 @@
 	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
 	<target name="clean" description="Clean up">
 		<delete quiet="true" dir="${build.classes.dir}" />
+                <delete quiet="true" dir="${linexslt.dir}" />
 	</target>
 
 	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
@@ -48,6 +50,12 @@
 				<include name="**/*.*" />
 			</fileset>
 		</copy>
+                <mkdir dir="${linexslt.dir}" />
+                <copy todir="${linexslt.dir}" overwrite="yes">
+                        <fileset dir="${basedir}">
+                                <include name="**/*.xsl" />
+                        </fileset>
+                </copy>
 	</target>
 
 	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
