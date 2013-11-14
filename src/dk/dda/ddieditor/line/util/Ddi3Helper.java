@@ -1,6 +1,10 @@
 package dk.dda.ddieditor.line.util;
 
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -9,6 +13,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import javax.xml.crypto.dsig.Transform;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptSchemeDocument;
@@ -75,6 +88,7 @@ import org.ddialliance.ddieditor.model.resource.DDIResourceType;
 import org.ddialliance.ddieditor.persistenceaccess.PersistenceManager;
 import org.ddialliance.ddieditor.ui.dbxml.code.CodeSchemeDao;
 import org.ddialliance.ddieditor.ui.dbxml.variable.VariableDao;
+import org.ddialliance.ddieditor.ui.editor.Editor;
 import org.ddialliance.ddieditor.ui.model.ElementType;
 import org.ddialliance.ddieditor.ui.model.ModelIdentifingType;
 import org.ddialliance.ddieditor.ui.model.code.CodeScheme;
@@ -86,6 +100,7 @@ import org.ddialliance.ddieditor.ui.model.variable.Variable;
 import org.ddialliance.ddieditor.ui.preference.PreferenceUtil;
 import org.ddialliance.ddieditor.ui.util.DialogUtil;
 import org.ddialliance.ddieditor.ui.util.LanguageUtil;
+import org.ddialliance.ddieditor.ui.util.PrintUtil;
 import org.ddialliance.ddieditor.util.DdiEditorConfig;
 import org.ddialliance.ddieditor.util.LightXmlObjectUtil;
 import org.ddialliance.ddiftp.util.DDIFtpException;
@@ -99,6 +114,14 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.swt.program.Program;
+import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
+import org.python.antlr.PythonParser.return_stmt_return;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import dk.dda.ddieditor.line.osgi.Activator;
 import dk.dda.ddieditor.line.view.ProblemView;
@@ -258,7 +281,8 @@ public class Ddi3Helper {
 		pseudoVarIdMap = new HashMap<String, Integer>();
 		pseudoVarIdRefMap = new HashMap<String, Integer>();
 		pseudoSeqIdMap = new HashMap<String, Integer>();
-		pseudoSeqIdRefMap = new HashMap<String, Integer>();		
+		pseudoSeqIdRefMap = new HashMap<String, Integer>();	
+		nbrVariableCategories = new HashMap<String, Integer>();
 	}
 
 	// =universe label=universe description
@@ -623,8 +647,149 @@ public class Ddi3Helper {
 
 		return cats;
 	}
+	
+	private HashMap<String, Integer> parseNbrVarCodes(File nbrCodesXml) {
+		final class MyHandler extends DefaultHandler {
+			boolean bUserName = false;
+			boolean bNbrCodes = false;
+			String userName;
+			String nbrCodes = "0";
+			HashMap<String, Integer> nbrVarCodesMap = new HashMap<String, Integer>();
+
+			@Override
+			public void startElement(String uri, String localName,
+					String qName, Attributes attributes)
+					throws SAXException {
+
+				// System.out.println("Start Element :" + qName);
+				if (qName.equalsIgnoreCase("USERNAME")) {
+					bUserName = true;
+					bNbrCodes = false;
+				}
+
+				if (qName.equalsIgnoreCase("NBRCODES")) {
+					bUserName = false;
+					bNbrCodes = true;
+				}
+
+			}
+
+			@Override
+			public void endElement(String uri, String localName,
+					String qName) throws SAXException {
+
+				// System.out.println("End Element :" + qName);
+				if (qName.equalsIgnoreCase("RESULT")) {
+					if (bNbrCodes) {
+						nbrVarCodesMap.put(userName, new Integer(nbrCodes));
+					}
+					bUserName = false;
+					bNbrCodes = false;
+					nbrCodes = "0";
+				}
+
+			}
+			
+			@Override
+			public void characters(char ch[], int start, int length) throws SAXException {
+				 
+				if (bUserName) {
+					// System.out.println("User Name : " + new String(ch, start, length));
+					userName = new String(ch, start, length);
+				}
+		 
+				if (bNbrCodes) {
+					// System.out.println("Nbr codes : "+ new String(ch, start, length));
+					nbrCodes = new String(ch, start, length);
+				}
+			}
+
+			public HashMap<String, Integer> getNbrCodesMap() {
+				return nbrVarCodesMap;
+			}
+
+		}
+		
+		// System.out.println("filename: "+nbrCodesXml.getAbsolutePath());
+		MyHandler myHandler = new MyHandler();
+		try {
+			SAXParserFactory factory = SAXParserFactory.newInstance();
+			SAXParser saxParser = factory.newSAXParser();
+			saxParser.parse(nbrCodesXml.getAbsoluteFile(), myHandler);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return myHandler.getNbrCodesMap();
+
+	}
+	
+	public HashMap<String, Integer> getAllNbrVariableCodes() {
+		HashMap<String, Integer> varCodes = new HashMap<String, Integer>();
+		File ddiXmlFile = null;
+		File varCodesXmlFile = null;
+		String name = "DDI-L-";
+		
+		// see PrintDDI3.java:
+		// 1. export relevant resource to tmp. file.
+		// 2. transform resource using nbr-var-codes.xsl
+		// 3. parse nbr-var-codes.xml building varCodes map - filtering non coded variable out
+		// 4. return varCodes
+
+		// export the resource
+		try {
+			List<DDIResourceType> ddiResources = PersistenceManager
+					.getInstance().getResources();
+			List<String> resources = new ArrayList<String>();
+			String workingResorce = PersistenceManager.getInstance()
+					.getWorkingResource();
+
+			for (DDIResourceType ddiResource : ddiResources) {
+				resources.add(ddiResource.getOrgName());
+				PersistenceManager.getInstance().setWorkingResource(
+						ddiResource.getOrgName());
+				for (LightXmlObjectType lightXmlObject : DdiManager
+						.getInstance()
+						.getStudyUnitsLight(null, null, null, null)
+						.getLightXmlObjectList().getLightXmlObjectList()) {
+					name = DdiEditorConfig
+							.get(DdiEditorConfig.DDI_AGENCY_IDENTIFIER)
+							+ "-"
+							+ lightXmlObject.getId();
+				}
+			}
+			PersistenceManager.getInstance().setWorkingResource(workingResorce);
+
+			ddiXmlFile = File.createTempFile(name, ".xml");
+			varCodesXmlFile = File.createTempFile(name + "-varcodes-", ".xml");
+			ddiXmlFile.deleteOnExit();
+			varCodesXmlFile.deleteOnExit();
+
+			PersistenceManager.getInstance().exportResoures(workingResorce, resources, ddiXmlFile);
+
+			// transformer - get number of codes of each variable
+			Transformer transformer = new PrintUtil().getLineNbrVarCodesXmlTransformer();
+
+			// do transformation
+			transformer.transform(new StreamSource(ddiXmlFile.toURI().toURL()
+					.toString()), new StreamResult(varCodesXmlFile.toURI().toURL()
+					.toString()));
+
+			
+		} catch (Exception e) {
+			MessageDialog.openError(PlatformUI.getWorkbench().getDisplay()
+					.getActiveShell(),
+					Translator.trans("PrintDDI3Action.mess.PrintDDI3Error"),
+					e.getMessage());
+		}
+		
+		varCodes = parseNbrVarCodes(varCodesXmlFile);
+
+		return varCodes;
+	}
 
 	public void createCategory(String text) throws DDIFtpException {
+//		HashMap<String, Integer> nbrVariableCodesMap = new HashMap<String, Integer>();
 		// create category scheme - if not already done
 		if (cats == null) {
 			createCategoryScheme();
@@ -633,6 +798,9 @@ public class Ddi3Helper {
 			catIndex++;
 		}
 
+		// get number of Code for all variables
+//		nbrVariableCodesMap = getAllNbrVariableCodes();
+		
 		// create category
 		CategoryType cat = cats.getCategoryScheme().addNewCategory();
 		addIdAndVersion(cat, ElementType.CATEGORY.getIdPrefix(), null);
@@ -1890,6 +2058,31 @@ public class Ddi3Helper {
 
 	public void setLineNo(int lineNo) {
 		this.lineNo = lineNo;
+	}
+	
+	String currentPseudoVarId = null;
+	
+	public String getCurrentPseudoVarId() {
+		return currentPseudoVarId;
+	}
+	
+	public void setCurrentPseudoVarId(String pseudoVarid) {
+		currentPseudoVarId = pseudoVarid;
+	}
+	
+	HashMap<String, Integer> nbrVariableCategories = new HashMap<String, Integer>();;
+	
+	public void incrementNbrVariableCategories(String pseudoVarid) {
+		Integer i1 = nbrVariableCategories.get(pseudoVarid);
+		Integer i2 = 1;
+		if (i1 != null) {
+			i2 = i1+1;
+		}
+		nbrVariableCategories.put(pseudoVarid, i2);
+	}
+	
+	public int getNbrVariableCategories(String pseudoVarid) {
+		return nbrVariableCategories.get(pseudoVarid);
 	}
 	
 	public void setPseudoVarId(String varId) {

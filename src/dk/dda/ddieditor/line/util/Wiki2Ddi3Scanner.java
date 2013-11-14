@@ -2,6 +2,7 @@ package dk.dda.ddieditor.line.util;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
@@ -24,6 +25,9 @@ public class Wiki2Ddi3Scanner {
 	int lineNo = 0;
 
 	Ddi3Helper ddi3Helper = null;
+//	HashMap<String, Integer> nbrVariableCodesMap = new HashMap<String, Integer>();
+	HashMap<String, Integer> nbrVariableCodesMap = null;
+	
 	final static String SEQ_END = "end";
 	final static String MQUE_END = "end";
 
@@ -167,12 +171,30 @@ public class Wiki2Ddi3Scanner {
 			return;
 		}
 		if (defineLine(line, catePattern)) {
+			if (nbrVariableCodesMap == null) {
+				nbrVariableCodesMap = ddi3Helper.getAllNbrVariableCodes();
+			}
 			if (create) {
 				if (line.indexOf(catsRpMatch) > -1) {
 					useRPCategory(line);
 					return;
 				}
 				createCategory(line);
+			} else {
+				// check if nbr. of categories exceeds number of codes
+				Integer nbrCodes = nbrVariableCodesMap.get(ddi3Helper
+						.getCurrentPseudoVarId());
+				ddi3Helper.incrementNbrVariableCategories(ddi3Helper
+						.getCurrentPseudoVarId());
+				if (ddi3Helper.getNbrVariableCategories(ddi3Helper
+						.getCurrentPseudoVarId()) > nbrCodes) {
+					reportError(
+							ElementType.CATEGORY,
+							Translator
+									.trans("line.parse.errorcategory", ddi3Helper
+									.getCurrentPseudoVarId(), ddi3Helper.getLineNo()),
+							create);
+				}
 			}
 			return;
 		}
@@ -319,6 +341,7 @@ public class Wiki2Ddi3Scanner {
 
 		no = "V" + line.substring(matcher.start() + 1, matcher.end());
 		String text = line.substring(matcher.end()).trim();
+		ddi3Helper.setCurrentPseudoVarId(no);
 		if (create) {
 			ddi3Helper.createQuestion(no, text);
 		}
