@@ -2076,8 +2076,25 @@ public class Ddi3Helper {
 		nbrVariableCategories.put(pseudoVarid, i2);
 	}
 	
+	public void setNbrVariableCategories(String pseudoVarid,  Integer nbr) {
+		nbrVariableCategories.put(pseudoVarid, nbr);
+	}
+	
 	public int getNbrVariableCategories(String pseudoVarid) {
-		return nbrVariableCategories.get(pseudoVarid);
+		if (nbrVariableCategories.get(pseudoVarid) != null) {
+			return nbrVariableCategories.get(pseudoVarid);
+		}
+		return 0;
+	}
+	
+	// called when new question item appears in wiki file
+	// - check if nbr. of categories is different from number of Codes for
+	// PREVIOUS variable
+	public boolean mismatchOfVariableCodeAndCategories(Integer nbrVariableCodes) {
+		if (getNbrVariableCategories(getCurrentPseudoVarId()) != nbrVariableCodes) {
+			return false;
+		}
+		return true;
 	}
 	
 	public void setPseudoVarId(String varId) {

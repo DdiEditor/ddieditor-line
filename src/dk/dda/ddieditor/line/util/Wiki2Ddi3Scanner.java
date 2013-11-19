@@ -165,8 +165,7 @@ public class Wiki2Ddi3Scanner {
 		}
 
 		if (defineLine(line.trim(), cateReusePattern)) {
-			if (create)
-				reuseCategory(line);
+			reuseCategory(line, create);
 			return;
 		}
 		if (defineLine(line, catePattern)) {
@@ -180,20 +179,15 @@ public class Wiki2Ddi3Scanner {
 				}
 				createCategory(line);
 			} else {
-				// check if nbr. of categories exceeds number of codes
-				Integer nbrCodes = nbrVariableCodesMap.get(ddi3Helper
-						.getCurrentPseudoVarId());
+				if (line.indexOf(catsRpMatch) > -1) {
+					ddi3Helper.setNbrVariableCategories(ddi3Helper
+						.getCurrentPseudoVarId(), nbrVariableCodesMap.get(ddi3Helper
+									.getCurrentPseudoVarId()));
+					return;
+				}
+				// count nbr. of categories for given variable
 				ddi3Helper.incrementNbrVariableCategories(ddi3Helper
 						.getCurrentPseudoVarId());
-				if (ddi3Helper.getNbrVariableCategories(ddi3Helper
-						.getCurrentPseudoVarId()) > nbrCodes) {
-					reportError(
-							ElementType.CATEGORY,
-							Translator
-									.trans("line.parse.errorcategory", ddi3Helper
-									.getCurrentPseudoVarId(), ddi3Helper.getLineNo()),
-							create);
-				}
 			}
 			return;
 		}
@@ -337,6 +331,21 @@ public class Wiki2Ddi3Scanner {
 		String no = "";
 		Matcher matcher = variNamePattern.matcher(line);
 		matcher.find();
+		
+		if (!create
+				&& nbrVariableCodesMap != null
+				&& nbrVariableCodesMap.get(ddi3Helper.getCurrentPseudoVarId()) != null) {
+			// check if nbr of codes matches categories for a given variable
+			if (!ddi3Helper.mismatchOfVariableCodeAndCategories(nbrVariableCodesMap
+					.get(ddi3Helper.getCurrentPseudoVarId()))) {
+				reportError(
+						ElementType.CATEGORY,
+						Translator
+								.trans("line.parse.errorcategory", ddi3Helper
+								.getCurrentPseudoVarId()),
+						create);
+			}
+		}
 
 		no = "V" + line.substring(matcher.start() + 1, matcher.end());
 		String text = line.substring(matcher.end()).trim();
@@ -398,7 +407,7 @@ public class Wiki2Ddi3Scanner {
 		}
 	}
 
-	private void reuseCategory(String line) throws DDIFtpException {
+	private void reuseCategory(String line, boolean create) throws DDIFtpException {
 		Matcher matcher = catePattern.matcher(line);
 		if (matcher.find()) {
 			int index = matcher.end();
@@ -407,7 +416,30 @@ public class Wiki2Ddi3Scanner {
 			// reuse categories
 			matcher = variNamePattern.matcher(catLine);
 			if (matcher.find()) {
-				ddi3Helper.reuseCategories(catLine);
+				if (create) {
+					ddi3Helper.reuseCategories(catLine);
+				} else {
+					// check if nbr. of reuse categories exceeds number of codes
+					Integer nbrCodes = nbrVariableCodesMap.get(catLine);
+					if (nbrCodes == null) {
+						reportError(
+								ElementType.CATEGORY,
+								Translator
+										.trans("line.parse.errorcategory.variableref", catLine, ddi3Helper.getLineNo()),
+								create);
+						return;
+					}
+					if (ddi3Helper.getNbrVariableCategories(catLine) != nbrCodes) {
+						reportError(
+								ElementType.CATEGORY,
+								Translator
+										.trans("line.parse.errorreusecategory", ddi3Helper
+										.getCurrentPseudoVarId(), ddi3Helper.getLineNo()),
+								create);
+					}
+					ddi3Helper.setNbrVariableCategories(ddi3Helper
+										.getCurrentPseudoVarId(), nbrCodes);
+				}
 			}
 		}
 	}
