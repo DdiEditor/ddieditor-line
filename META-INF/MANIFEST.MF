@@ -17,7 +17,7 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui,
  org.eclipse.ui.ide,
  lib-java;bundle-version="0.10.0",
- util;bundle-version="0.11.0",
+ util;bundle-version="0.12.0",
  ddieditor;bundle-version="0.17.0",
  ddieditor-model;bundle-version="0.1.0",
  ddieditor-ui;bundle-version="0.13.0"
