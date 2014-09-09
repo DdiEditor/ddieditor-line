@@ -41,7 +41,7 @@
          <command
                commandId="org.eclipse.ui.ide.configureFilters"
                icon="icons/configs.gif"
-               label="Configure Flters"
+               label="Configure Filters"
                style="push">
          </command>
       </menuContribution>
