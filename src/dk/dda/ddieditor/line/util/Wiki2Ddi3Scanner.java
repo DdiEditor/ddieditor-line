@@ -278,6 +278,11 @@ public class Wiki2Ddi3Scanner {
 			id = line.substring(2, index);
 		}
 		if (!id.equals(SEQ_END)) {
+			if (ddi3Helper.pseudoSeqIdExists(id)) {
+				reportError(ElementType.SEQUENCE, Translator.trans(
+						"line.parse.errorsequence.sequenceid", id,
+						ddi3Helper.getLineNo()), create);
+			}
 			ddi3Helper.setPseudoSeqId(id);
 		}
 		if (!create) {
