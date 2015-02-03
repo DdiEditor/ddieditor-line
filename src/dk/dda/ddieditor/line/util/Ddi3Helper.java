@@ -1,27 +1,20 @@
 package dk.dda.ddieditor.line.util;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
-import javax.xml.crypto.dsig.Transform;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.ddialliance.ddi3.xml.xmlbeans.conceptualcomponent.ConceptSchemeDocument;
@@ -88,7 +81,6 @@ import org.ddialliance.ddieditor.model.resource.DDIResourceType;
 import org.ddialliance.ddieditor.persistenceaccess.PersistenceManager;
 import org.ddialliance.ddieditor.ui.dbxml.code.CodeSchemeDao;
 import org.ddialliance.ddieditor.ui.dbxml.variable.VariableDao;
-import org.ddialliance.ddieditor.ui.editor.Editor;
 import org.ddialliance.ddieditor.ui.model.ElementType;
 import org.ddialliance.ddieditor.ui.model.ModelIdentifingType;
 import org.ddialliance.ddieditor.ui.model.code.CodeScheme;
@@ -112,13 +104,11 @@ import org.ddialliance.ddiftp.util.xml.XmlBeansUtil;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.swt.program.Program;
-import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
-import org.python.antlr.PythonParser.return_stmt_return;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -2153,6 +2143,19 @@ public class Ddi3Helper {
 			}
 		} catch (CoreException e) {
 			throw new DDIFtpException(e.getMessage(), e);
+		}
+	}
+	
+	public void cleanMarker() throws Exception {
+		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		IMarker[] markers = root.findMarkers(ProblemView.MARKER_ID, false,
+				IResource.DEPTH_ZERO);
+		for (int i = 0; i < markers.length; i++) {
+			String message = (String) markers[i]
+					.getAttribute(IMarker.SOURCE_ID);
+			if (message != null) {
+				markers[i].delete();
+			}
 		}
 	}
 
