@@ -2147,6 +2147,7 @@ public class Ddi3Helper {
 	}
 	
 	public void cleanMarkers() throws Exception {
+		// clean up markers
 		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 		IMarker[] markers = root.findMarkers(ProblemView.MARKER_ID, false,
 				IResource.DEPTH_ZERO);
