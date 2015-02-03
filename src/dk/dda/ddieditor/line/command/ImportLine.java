@@ -137,6 +137,7 @@ public class ImportLine extends org.eclipse.core.commands.AbstractHandler {
 	 * @throws Exception
 	 */
 	public void createDdi3(Ddi3Helper ddi3Helper) throws Exception {
+		ddi3Helper.cleanMarker();
 		// parse file
 		Wiki2Ddi3Scanner wiki2Ddi3Scanner = new Wiki2Ddi3Scanner(ddi3Helper);
 		wiki2Ddi3Scanner.startScanning(lineWizard.wikiToImport, true);
