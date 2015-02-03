@@ -2146,14 +2146,14 @@ public class Ddi3Helper {
 		}
 	}
 	
-	public void cleanMarker() throws Exception {
+	public void cleanMarkers() throws Exception {
 		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 		IMarker[] markers = root.findMarkers(ProblemView.MARKER_ID, false,
 				IResource.DEPTH_ZERO);
 		for (int i = 0; i < markers.length; i++) {
 			String message = (String) markers[i]
 					.getAttribute(IMarker.SOURCE_ID);
-			if (message != null) {
+			if (message != null && message.equals(Activator.PLUGIN_ID) ) {
 				markers[i].delete();
 			}
 		}
