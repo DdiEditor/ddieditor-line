@@ -65,6 +65,7 @@ import org.ddialliance.ddi3.xml.xmlbeans.reusable.NumericTypeCodeType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.ProgrammingLanguageCodeType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.ReferenceType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.RepresentationType;
+import org.ddialliance.ddi3.xml.xmlbeans.reusable.SchemeReferenceType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.StructuredStringType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.UserIDType;
 import org.ddialliance.ddieditor.logic.identification.IdentificationManager;
@@ -776,9 +777,48 @@ public class Ddi3Helper {
 
 		return varCodes;
 	}
-
+	
+	private CategorySchemeDocument lookupCategoryScheme(String id)
+			throws DDIFtpException, Exception {
+		CategorySchemeDocument cats = null;
+		LightXmlObjectListType lightCatsList = DdiManager.getInstance()
+				.getCategorySchemesLight(id, null, null, null)
+				.getLightXmlObjectList();
+		for (LightXmlObjectType lightCats : lightCatsList
+				.getLightXmlObjectList()) {
+			if (lightCats.getId().equals(id)) {
+				cats = DdiManager.getInstance().getCategoryScheme(id,
+						lightCats.getVersion(), lightCats.getParentId(),
+						lightCats.getParentVersion());
+				break;
+			}
+		}
+		return cats;
+	}
+	
+	private void reportCategorySchemeReplaced() throws DDIFtpException {
+		String codeLabel = XmlBeansUtil.getTextOnMixedElement(cods
+				.getDocument().getCodeScheme().getLabelList().get(0));
+		String categorySchemeRef = cods.getDocument().getCodeScheme()
+				.getCategorySchemeReference().getIDList().get(0)
+				.getStringValue();
+		String categorySchemeLabel = "";
+		try {
+			categorySchemeLabel = XmlBeansUtil
+					.getTextOnMixedElement(lookupCategoryScheme(
+							categorySchemeRef).getCategoryScheme()
+							.getLabelList().get(0));
+		} catch (Exception e) {
+			throw new DDIFtpException(e.getMessage(), new Throwable());
+		}
+		createMarker(lineNo, Translator.trans(
+				"line.info.catetoryschemereplaced", categorySchemeLabel,
+				codeLabel), "Category Scheme");
+	}
+	
 	public void createCategory(String text) throws DDIFtpException {
-		// create category scheme - if not already done
+
+		// create category scheme - if not already created
 		if (cats == null) {
 			createCategoryScheme();
 			catIndex = 0;
@@ -807,6 +847,22 @@ public class Ddi3Helper {
 		// add cate
 		try {
 			if (cods != null) {
+				if (cods.getDocument().getCodeScheme()
+						.getCategorySchemeReference() != null) {
+					reportCategorySchemeReplaced();
+					// unset category scheme reference
+					cods.getDocument().getCodeScheme()
+							.unsetCategorySchemeReference();
+					// unset category references
+					int ncodes = cods.getDocument().getCodeScheme().getCodeList().size();
+					for (int i = 0; i < ncodes; i++) {
+						cods.getDocument().getCodeScheme().removeCode(0);
+					}
+					for (int i = 0; i < ncodes; i++) {
+						cods.getDocument().getCodeScheme().addNewCode().setValue(String.valueOf(i));
+					}
+				}
+				// add new category reference
 				IdentificationManager.getInstance()
 						.addReferenceInformation(
 								cods.getCodes().get(catIndex)
@@ -817,6 +873,7 @@ public class Ddi3Helper {
 										.getCategoryScheme().getVersion(), cat
 										.getId(), cat.getVersion(),
 										ElementType.CATEGORY.getElementName()));
+
 			}
 		} catch (IndexOutOfBoundsException e) {
 			handleParseError(ElementType.CATEGORY, Translator.trans(
@@ -877,6 +934,7 @@ public class Ddi3Helper {
 			}
 
 			// guard lookup cods ref cats
+			//dak
 			if (cats == null) {
 				LightXmlObjectListType lightCatsList = DdiManager
 						.getInstance()
@@ -2081,7 +2139,8 @@ public class Ddi3Helper {
 	// - check if nbr. of categories is different from number of Codes for
 	// PREVIOUS variable
 	public boolean mismatchOfVariableCodeAndCategories(Integer nbrVariableCodes) {
-		if (getNbrVariableCategories(getCurrentPseudoVarId()) != nbrVariableCodes) {
+		if (getNbrVariableCategories(getCurrentPseudoVarId()) != 0
+				&& getNbrVariableCategories(getCurrentPseudoVarId()) != nbrVariableCodes) {
 			return false;
 		}
 		return true;
