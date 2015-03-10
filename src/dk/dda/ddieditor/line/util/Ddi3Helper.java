@@ -934,7 +934,6 @@ public class Ddi3Helper {
 			}
 
 			// guard lookup cods ref cats
-			//dak
 			if (cats == null) {
 				LightXmlObjectListType lightCatsList = DdiManager
 						.getInstance()
