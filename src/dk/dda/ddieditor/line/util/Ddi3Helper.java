@@ -855,11 +855,16 @@ public class Ddi3Helper {
 							.unsetCategorySchemeReference();
 					// unset category references
 					int ncodes = cods.getDocument().getCodeScheme().getCodeList().size();
+					HashMap<Integer, String> codeMap = new HashMap<Integer, String>();
+					for (int i = 0; i < ncodes; i++) {
+						codeMap.put(i, cods.getDocument().getCodeScheme().getCodeList().get(i).getValue());
+					}
 					for (int i = 0; i < ncodes; i++) {
 						cods.getDocument().getCodeScheme().removeCode(0);
 					}
 					for (int i = 0; i < ncodes; i++) {
-						cods.getDocument().getCodeScheme().addNewCode().setValue(String.valueOf(i));
+//						cods.getDocument().getCodeScheme().addNewCode().setValue(String.valueOf(i));
+						cods.getDocument().getCodeScheme().addNewCode().setValue(codeMap.get(i));
 					}
 				}
 				// add new category reference
