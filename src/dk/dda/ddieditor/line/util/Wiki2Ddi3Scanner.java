@@ -126,6 +126,18 @@ public class Wiki2Ddi3Scanner {
 	String ifThenElseMatch = "''ifthenelse''";
 	String intervMatch = "''interview''";
 	String catsRpMatch = "**cats_";
+	String sequenceEndMatch = "==end=="; 
+	String variableListBeginMatch = "[";
+	String variableListEndMatch = "]";
+	
+	// New wiki extension
+	Pattern newFilter = Pattern.compile("^[\\+]{1}F[1-9]+[0-9]*,start\\+\\[([vV][1-9]+[0-9][,]?)+\\]{1}");
+	Pattern endNewFilter = Pattern.compile("^[\\+]{1}F[1-9]+[0-9]*,end\\+");
+	Pattern newStatementItem = Pattern.compile("^[-]{1}T[1-9]+[0-9]*,start[-]{1}\\w");
+	Pattern endNewStatementItem = Pattern.compile("^[-]{1}[T][1-9]+[0-9]*,end[-]{1}");
+	String filterNumberBeginMatch = "+F";
+	String filterNumberEndMatch = ",start+[";
+	String statemenNumberBeginMatch = ",start-";
 
 	public List<String> errorList = new ArrayList<String>();
 
@@ -195,6 +207,32 @@ public class Wiki2Ddi3Scanner {
 			createQuestion(line, create);
 			return;
 		}
+		if (defineLine(line, newFilter)) {
+			// convert +F<filter number>,start+[<list of variable numbers>(condition)] to: 
+			// ''ifthenelse'' [<list of variable numbers>] seq[<filter number>] na
+			// ==seq[filter number]==
+			
+			String filterNumber = line.substring(
+					line.indexOf(filterNumberBeginMatch)+filterNumberBeginMatch.length(),
+					line.indexOf(filterNumberEndMatch)).trim();
+			String variableList = line.substring(
+					line.indexOf(variableListBeginMatch)+variableListBeginMatch.length(),
+					line.indexOf(variableListEndMatch)).trim();
+			
+			//String ifThenElseLine = "''ifthenelse'' V29 seq30 na";
+			String ifThenElseLine = ifThenElseMatch+" "+variableList+" seq"+filterNumber+" na";
+			processLine(ifThenElseLine, create);
+			//String startSequenceLine = "==seq30=="; // filter number
+			String startSequenceLine = "==seq"+filterNumber+"==seq"+filterNumber;
+			processLine(startSequenceLine, create);
+			return;
+		}
+		if (defineLine(line, endNewFilter)) {
+			// convert +F<number>,end+ to:
+			// ==end==
+			processLine(sequenceEndMatch, create);
+			return;
+		}
 		if (line.indexOf(ifThenElseMatch) > -1) {
 			createIfThenElse(line, create);
 			return;
@@ -202,6 +240,19 @@ public class Wiki2Ddi3Scanner {
 		if (line.indexOf(compMatch) > -1) {
 			if (create)
 				createComputationItem(line);
+			return;
+		}
+		if (defineLine(line, newStatementItem)) {
+			// convert -T<statement number>,start-<Statement Item text> to: 
+			// ''state'' <Statement Item text>
+			int index = line.indexOf(statemenNumberBeginMatch);
+			String statementItemText = line.substring(index + statemenNumberBeginMatch.length()).trim();
+			String statementItemLine = stateMatch+statementItemText;
+			processLine(statementItemLine, create);
+			return;
+		}
+		if (defineLine(line, endNewStatementItem)) {
+			// ignore end of New Statement Item
 			return;
 		}
 		if (line.indexOf(stateMatch) > -1) {
