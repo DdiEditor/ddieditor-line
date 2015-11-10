@@ -393,7 +393,11 @@ public class Ddi3Helper {
 		if (checkString(description))
 			setText(result.getQuestionScheme().addNewDescription(), description);
 
-		createConcept(label, description);
+		if (!label.equals("empty")) {
+			createConcept(label, description);
+		} else {
+			conc = null;
+		}
 
 		ques = result;
 		quesList.add(result);
