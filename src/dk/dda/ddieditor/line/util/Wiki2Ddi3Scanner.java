@@ -131,7 +131,7 @@ public class Wiki2Ddi3Scanner {
 	String variableListEndMatch = "]";
 	
 	// New wiki extension
-	Pattern newFilter = Pattern.compile("^[\\+]{1}F[1-9]+[0-9]*,start\\+\\[([vV][1-9]+[0-9][,]?)+\\]{1}");
+	Pattern newFilter = Pattern.compile("^[\\+]{1}F[1-9]+[0-9]*,start\\+\\[([vV][1-9]+[0-9]*[,]?)+\\]{1}");
 	Pattern endNewFilter = Pattern.compile("^[\\+]{1}F[1-9]+[0-9]*,end\\+");
 	Pattern newStatementItem = Pattern.compile("^[-]{1}T[1-9]+[0-9]*,start[-]{1}\\w");
 	Pattern endNewStatementItem = Pattern.compile("^[-]{1}[T][1-9]+[0-9]*,end[-]{1}");
@@ -208,7 +208,7 @@ public class Wiki2Ddi3Scanner {
 			return;
 		}
 		if (defineLine(line, newFilter)) {
-			// convert +F<filter number>,start+[<list of variable numbers>(condition)] to: 
+			// convert +F<filter number>,start+[<list of variable numbers>] to: 
 			// ''ifthenelse'' [<list of variable numbers>] seq[<filter number>] na
 			// ==seq[filter number]==
 			
@@ -252,7 +252,7 @@ public class Wiki2Ddi3Scanner {
 			return;
 		}
 		if (defineLine(line, endNewStatementItem)) {
-			// ignore end of New Statement Item
+			// ignore end of new Statement Item
 			return;
 		}
 		if (line.indexOf(stateMatch) > -1) {
