@@ -149,6 +149,7 @@ public class Ddi3Helper {
 	boolean mque = false;
 	QuestionConstructType mquecc;
 	public QuestionSchemeDocument ques;
+	QuestionSchemeDocument emptyQues;
 	public List<String> quesIsNewList = new ArrayList<String>();
 	QuestionItemType quei;
 	CategorySchemeDocument cats;
@@ -379,7 +380,32 @@ public class Ddi3Helper {
 
 	public void createQuestionScheme(String label, String description)
 			throws DDIFtpException {
-		QuestionSchemeDocument result = QuestionSchemeDocument.Factory
+		QuestionSchemeDocument result = null;
+		boolean reuseQuestionScheme = false;
+
+		if (label.equals("empty")) {
+			// reuse 'empty' question scheme - if it exist
+			if (emptyQues == null) {
+				try {
+					result = lookupQuestionScheme(label);
+				} catch (Exception e) {
+					throw new DDIFtpException(e.getMessage(), new Throwable());
+				}
+			} else {
+				result = emptyQues;
+			}
+			if (result != null) {
+				conc = null;
+				ques = result;
+				if (result != emptyQues) {
+					quesList.add(result);
+					quesIsNewList.add(result.getQuestionScheme().getId());
+				}
+				return;
+			}
+		}
+
+		result = QuestionSchemeDocument.Factory
 				.newInstance();
 		result.addNewQuestionScheme();
 		addIdAndVersion(result.getQuestionScheme(),
@@ -397,8 +423,9 @@ public class Ddi3Helper {
 			createConcept(label, description);
 		} else {
 			conc = null;
+			emptyQues = result;
 		}
-
+		
 		ques = result;
 		quesList.add(result);
 		quesIsNewList.add(result.getQuestionScheme().getId());
@@ -419,7 +446,7 @@ public class Ddi3Helper {
 	public void createQuestion(String pseudoVariableId, String text)
 			throws DDIFtpException {
 		if (cats != null && cods != null) {
-			verifyCodeSchmeCategorySchemeSizes(); // TODO mque probem
+			verifyCodeSchmeCategorySchemeSizes(); // TODO mque problem
 		}
 
 		QuestionItemType result = null;
@@ -781,6 +808,25 @@ public class Ddi3Helper {
 
 		return varCodes;
 	}
+	
+	private QuestionSchemeDocument lookupQuestionScheme(String id)
+			throws DDIFtpException, Exception {
+		QuestionSchemeDocument quests = null;
+		LightXmlObjectListType lightQuestsList = DdiManager.getInstance()
+				.getQuestionSchemesLight(id, null, null, null)
+				.getLightXmlObjectList();
+		for (LightXmlObjectType lightQuests : lightQuestsList
+				.getLightXmlObjectList()) {
+			if (lightQuests.getId().equals(id)) {
+				quests = DdiManager.getInstance().getQuestionScheme(id,
+						lightQuests.getVersion(), lightQuests.getParentId(),
+						lightQuests.getParentVersion());
+				break;
+			}
+		}
+		return quests;
+	}
+
 	
 	private CategorySchemeDocument lookupCategoryScheme(String id)
 			throws DDIFtpException, Exception {
