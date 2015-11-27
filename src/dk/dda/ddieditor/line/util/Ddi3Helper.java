@@ -65,7 +65,6 @@ import org.ddialliance.ddi3.xml.xmlbeans.reusable.NumericTypeCodeType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.ProgrammingLanguageCodeType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.ReferenceType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.RepresentationType;
-import org.ddialliance.ddi3.xml.xmlbeans.reusable.SchemeReferenceType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.StructuredStringType;
 import org.ddialliance.ddi3.xml.xmlbeans.reusable.UserIDType;
 import org.ddialliance.ddieditor.logic.identification.IdentificationManager;
@@ -149,7 +148,7 @@ public class Ddi3Helper {
 	boolean mque = false;
 	QuestionConstructType mquecc;
 	public QuestionSchemeDocument ques;
-	QuestionSchemeDocument emptyQues;
+	QuestionSchemeDocument emptyQues = null;
 	public List<String> quesIsNewList = new ArrayList<String>();
 	QuestionItemType quei;
 	CategorySchemeDocument cats;
@@ -380,27 +379,19 @@ public class Ddi3Helper {
 
 	public void createQuestionScheme(String label, String description)
 			throws DDIFtpException {
+		final String EMPTY_QUESTION_SCHEME_LABEL = "empty";
 		QuestionSchemeDocument result = null;
-		boolean reuseQuestionScheme = false;
 
-		if (label.equals("empty")) {
+		if (label.equals(EMPTY_QUESTION_SCHEME_LABEL)) {
 			// reuse 'empty' question scheme - if it exist
-			if (emptyQues == null) {
-				try {
-					result = lookupQuestionScheme(label);
-				} catch (Exception e) {
-					throw new DDIFtpException(e.getMessage(), new Throwable());
-				}
-			} else {
-				result = emptyQues;
-			}
+			result = emptyQues;
 			if (result != null) {
 				conc = null;
 				ques = result;
-				if (result != emptyQues) {
-					quesList.add(result);
-					quesIsNewList.add(result.getQuestionScheme().getId());
-				}
+//				if (result != emptyQues) {
+//					quesList.add(result);
+//					quesIsNewList.add(result.getQuestionScheme().getId());
+//				}
 				return;
 			}
 		}
@@ -410,6 +401,11 @@ public class Ddi3Helper {
 		result.addNewQuestionScheme();
 		addIdAndVersion(result.getQuestionScheme(),
 				ElementType.QUESTION_SCHEME.getIdPrefix(), null);
+		if (label.equals(EMPTY_QUESTION_SCHEME_LABEL)) {
+			UserIDType ut = result.getQuestionScheme().addNewUserID();
+			ut.setType(Ddi3NamespaceHelper.EMPTY_QUESTION_SCHEME_TYPE);
+			ut.setStringValue(EMPTY_QUESTION_SCHEME_LABEL);
+		}
 
 		// label
 		if (checkString(label))
@@ -419,7 +415,7 @@ public class Ddi3Helper {
 		if (checkString(description))
 			setText(result.getQuestionScheme().addNewDescription(), description);
 
-		if (!label.equals("empty")) {
+		if (!label.equals(EMPTY_QUESTION_SCHEME_LABEL)) {
 			createConcept(label, description);
 		} else {
 			conc = null;
