@@ -382,16 +382,12 @@ public class Ddi3Helper {
 		final String EMPTY_QUESTION_SCHEME_LABEL = "empty";
 		QuestionSchemeDocument result = null;
 
-		if (label.equals(EMPTY_QUESTION_SCHEME_LABEL)) {
+		if (label != null && label.equals(EMPTY_QUESTION_SCHEME_LABEL)) {
 			// reuse 'empty' question scheme - if it exist
 			result = emptyQues;
 			if (result != null) {
 				conc = null;
 				ques = result;
-//				if (result != emptyQues) {
-//					quesList.add(result);
-//					quesIsNewList.add(result.getQuestionScheme().getId());
-//				}
 				return;
 			}
 		}
@@ -410,7 +406,7 @@ public class Ddi3Helper {
 		if (checkString(description))
 			setText(result.getQuestionScheme().addNewDescription(), description);
 
-		if (!label.equals(EMPTY_QUESTION_SCHEME_LABEL)) {
+		if (label != null && !label.equals(EMPTY_QUESTION_SCHEME_LABEL)) {
 			createConcept(label, description);
 		} else {
 			conc = null;
