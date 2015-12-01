@@ -401,11 +401,6 @@ public class Ddi3Helper {
 		result.addNewQuestionScheme();
 		addIdAndVersion(result.getQuestionScheme(),
 				ElementType.QUESTION_SCHEME.getIdPrefix(), null);
-		if (label.equals(EMPTY_QUESTION_SCHEME_LABEL)) {
-			UserIDType ut = result.getQuestionScheme().addNewUserID();
-			ut.setType(Ddi3NamespaceHelper.EMPTY_QUESTION_SCHEME_TYPE);
-			ut.setStringValue(EMPTY_QUESTION_SCHEME_LABEL);
-		}
 
 		// label
 		if (checkString(label))
