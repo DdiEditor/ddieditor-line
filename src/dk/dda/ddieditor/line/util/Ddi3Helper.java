@@ -141,7 +141,7 @@ public class Ddi3Helper {
 
 	UniverseSchemeDocument unis;
 	public UniverseType univ;
-	public SequenceDocument curSubSeq = null;
+	public List<SequenceDocument> curSubSeq = new ArrayList<SequenceDocument>();
 	ConceptSchemeDocument cons;
 	public ConceptType conc;
 	MultipleQuestionItemDocument mquem;
@@ -311,7 +311,7 @@ public class Ddi3Helper {
 		if (checkString(label))
 			setText(result.getSequence().addNewLabel(), label);
 
-		curSubSeq = result;
+		curSubSeq.add(result);
 		seqList.add(result);
 		// comment out 20121013
 		// createUniverse(label, label);
@@ -328,7 +328,7 @@ public class Ddi3Helper {
 
 	// ==end==
 	public void endSequence() {
-		curSubSeq = null;
+		curSubSeq.remove(curSubSeq.size() - 1);
 	}
 
 	/**
@@ -1283,8 +1283,8 @@ public class Ddi3Helper {
 
 	public void createStatementItem(String statementText) throws Exception {
 		SequenceType seq = null;
-		if (curSubSeq != null) {
-			seq = curSubSeq.getSequence();
+		if (curSubSeq.size() != 0) {
+			seq = curSubSeq.get(curSubSeq.size() - 1).getSequence();
 		} else {
 			seq = mainSeq;
 		}
@@ -1599,8 +1599,8 @@ public class Ddi3Helper {
 	private void addControlConstructToSequence(
 			ControlConstructType controlConstruct) throws DDIFtpException {
 		SequenceType seq = null;
-		if (curSubSeq != null) {
-			seq = curSubSeq.getSequence();
+		if (curSubSeq.size() != 0) {
+			seq = curSubSeq.get(curSubSeq.size() - 1).getSequence();
 		} else {
 			seq = mainSeq;
 		}
